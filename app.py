@@ -1,4 +1,4 @@
-import re, uuid, threading, datetime as dt
+import re, uuid, threading, datetime as dt, json, time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from zoneinfo import ZoneInfo
 from pathlib import Path
@@ -16,27 +16,86 @@ class ScanOptions(BaseModel):
     min_price:float=10
     max_price:float=800
 
+def get_json_with_retries(url, params):
+    last_error = None
+    for attempt in range(4):
+        try:
+            response = requests.get(url, params=params, timeout=25)
+            response.raise_for_status()
+            return response.json()
+        except (requests.RequestException, ValueError) as exc:
+            last_error = exc
+            if attempt < 3:
+                time.sleep(attempt + 1)
+    raise last_error
+
 def universe(market):
-    if market=="US":
-        r=requests.get("https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt",timeout=25)
+    if market == "US":
+        r = requests.get("https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt", timeout=25)
         r.raise_for_status()
-        tickers=[line.split("|")[0] for line in r.text.splitlines()[1:] if "|" in line]
-        return [{"ticker":t,"symbol":t,"name":t} for t in tickers if re.fullmatch(r"[A-Z]{1,5}",t)]
-    url="https://datasets-server.huggingface.co/rows"
-    items=[]; offset=0
-    while offset<5000:
-        r=requests.get(url,params={"dataset":"kjhq/Sweden-Stock-Symbols-and-Metadata","config":"default","split":"train","offset":offset,"length":100},timeout=25)
-        r.raise_for_status()
-        data=r.json(); batch=data.get("rows",[])
-        if not batch:break
+        tickers = [line.split("|")[0] for line in r.text.splitlines()[1:] if "|" in line]
+        return ([{"ticker":t,"symbol":t,"name":t} for t in tickers if re.fullmatch(r"[A-Z]{1,5}",t)],
+                "Nasdaq-lista; NYSE och NYSE American ingår ännu inte.")
+    items = []
+    offset = 0
+    expected = None
+    error_text = ""
+    while offset < 5000:
+        try:
+            data = get_json_with_retries(
+                "https://datasets-server.huggingface.co/rows",
+                {"dataset":"kjhq/Sweden-Stock-Symbols-and-Metadata",
+                 "config":"default","split":"train","offset":offset,"length":100})
+        except Exception as exc:
+            error_text = "Datakällan misslyckades vid rad " + str(offset) + ": " + str(exc)[:90]
+            break
+        batch = data.get("rows", [])
+        if not batch:
+            break
+        expected = data.get("num_rows_total")
         for row in batch:
-            a=row.get("row",{});t=str(a.get("ticker","")).strip().upper()
-            if a.get("market")=="OMXSTO" and re.fullmatch(r"[A-Z0-9._-]{1,20}",t):
-                items.append({"ticker":t,"symbol":t.replace("_","-").replace(".","-")+".ST","name":str(a.get("name") or t)})
-        offset+=len(batch)
-        if offset>=data.get("num_rows_total",offset):break
-    if not items:raise ValueError("Svensk aktielista kunde inte hämtas från datakällan.")
-    return list({i["ticker"]:i for i in items}.values())
+            a = row.get("row", {})
+            t = str(a.get("ticker", "")).strip().upper()
+            if a.get("market") == "OMXSTO" and re.fullmatch(r"[A-Z0-9._-]{1,20}", t):
+                items.append({"ticker":t,
+                              "symbol":t.replace("_","-").replace(".","-")+".ST",
+                              "name":str(a.get("name") or t)})
+        offset += len(batch)
+        if expected is not None and offset >= expected:
+            break
+    full = not error_text and expected is not None and offset >= expected
+    cache = Path("/tmp/klar_invest_se_universe.json")
+    if full and items:
+        try:
+            cache.write_text(json.dumps(items,ensure_ascii=False),encoding="utf-8")
+        except OSError:
+            pass
+    elif cache.exists():
+        try:
+            saved = json.loads(cache.read_text(encoding="utf-8"))
+            if len(saved) > len(items):
+                items = saved
+                error_text += " Använder senast sparade instrumentlista."
+        except (OSError, ValueError):
+            pass
+    if not items:
+        # Older reference list; mark its limited coverage prominently.
+        try:
+            raw = requests.get("https://gist.githubusercontent.com/mtornwall/c015f508d6f08578797dbf2e596e4bea/raw/",timeout=18)
+            raw.raise_for_status()
+            for line in raw.text.splitlines():
+                t = line.strip().lstrip("|").strip().upper()
+                if re.fullmatch(r"[A-Z0-9-]{1,24}\.ST",t):
+                    items.append({"ticker":t[:-3],"symbol":t,"name":t[:-3]})
+            if items:
+                error_text += " Reservlista från 2024, ej komplett."
+        except requests.RequestException:
+            pass
+    if not items:
+        raise ValueError("Kunde inte hämta någon aktielista. Försök igen senare.")
+    note = ("Öppen svensk instrumentlista; fullständigheten mot Nasdaq är inte verifierad."
+            if full else "BEGRÄNSAD TÄCKNING: " + (error_text or "Aktielistan är ofullständig."))
+    return list({item["ticker"]:item for item in items}.values()), note
 
 def history(item,market):
     url="https://query1.finance.yahoo.com/v8/finance/chart/"+requests.utils.quote(item["symbol"],safe="")
@@ -47,15 +106,17 @@ def history(item,market):
     d=result[0]
     if d.get("meta",{}).get("currency")!=("SEK" if market=="SE" else "USD"):raise ValueError("Fel valuta")
     quote=d["indicators"]["quote"][0];bars=[]
-    today=dt.datetime.now(TZ).date()
+    zone=ZoneInfo("Europe/Stockholm" if market=="SE" else "America/New_York")
+    now=dt.datetime.now(zone)
+    close_time=dt.time(18,15) if market=="SE" else dt.time(16,15)
     for ix,t in enumerate(d.get("timestamp",[])):
         vals=[quote[k][ix] for k in ("open","high","low","close")]
         if any(v is None for v in vals):continue
         o,h,l,c=vals
         if min(vals)<=0 or h<max(o,c) or l>min(o,c):continue
-        date=dt.datetime.fromtimestamp(t,TZ).date()
-        # Exclude today's bar conservatively; never infer today's official daily close.
-        if date>=today:continue
+        date=dt.datetime.fromtimestamp(t,zone).date()
+        if date>now.date() or (date==now.date() and now.time()<close_time):
+            continue
         bars.append({"date":str(date),"open":o,"high":h,"low":l,"close":c})
     if len(bars)<3:raise ValueError("Otillräckliga dagskurser")
     return bars
@@ -84,7 +145,8 @@ def detect(bars,pattern,low,high):
 def do_scan(job_id,options):
     job=JOBS[job_id]
     try:
-        items=universe(options.market)
+        items,note=universe(options.market)
+        job["source_note"]=note
         job["total"]=len(items)
         def scan_one(item):
             try:
@@ -116,7 +178,7 @@ def start(o:ScanOptions):
     if o.market not in ("SE","US") or o.pattern not in ("piercing","engulfing","hammer"):
         return {"error":"Okända filter"}
     job=str(uuid.uuid4())
-    JOBS[job]={"state":"running","total":0,"processed":0,"checked":0,"errors":0,"error_examples":[],"results":[],"message":""}
+    JOBS[job]={"state":"running","total":0,"processed":0,"checked":0,"errors":0,"error_examples":[],"results":[],"message":"","source_note":""}
     threading.Thread(target=do_scan,args=(job,o),daemon=True).start()
     return {"job":job}
 
