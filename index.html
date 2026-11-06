@@ -1,0 +1,37 @@
+<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#071826"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="KLAR INVEST"><title>KLAR INVEST – Screener</title><style>
+*{box-sizing:border-box}body{background:#071826;color:#effaff;margin:0;font:16px -apple-system,BlinkMacSystemFont,Arial,sans-serif}main{max-width:760px;margin:auto;padding:26px 17px}header{padding:30px 0 10px}h1{font-size:39px;margin:0;letter-spacing:-1px}h1 span{color:#35dfab}.subtitle{color:#92c8eb;font-size:14px;letter-spacing:1px}section{background:#0d283a;padding:23px;border:1px solid #29516a;border-radius:23px;margin:20px 0}h2{margin:0 0 15px;font-size:23px}label{font-weight:700;display:block;margin:15px 0 8px}select,input{width:100%;background:#071a29;color:white;border:1px solid #608398;border-radius:12px;padding:14px;font-size:18px}button{width:100%;border:0;border-radius:14px;background:#37dfaa;color:#073023;padding:18px;font-size:21px;font-weight:900;margin-top:24px}button:disabled{opacity:.55}details{margin:16px 0;color:#a7d3f1}summary{cursor:pointer}p.note{font-size:14px;color:#b3cad9;line-height:1.5}.status{padding:14px;border-left:4px solid #89ceff;background:#081f31;border-radius:10px}.item{padding:15px;margin:12px 0;background:#081e2e;border:1px solid #295470;border-radius:12px}a{color:#8bceff}.good{color:#46e2ab;font-weight:800}.warn{color:#ffcc83}#stats{font-size:14px;color:#a2cbe2;line-height:1.7}pre{white-space:pre-wrap;word-break:break-word;font-size:12px}
+</style></head><body><main><header><h1>KLAR <span>INVEST</span></h1><div class="subtitle">SCREENER · SVERIGE & USA</div><p class="note">Välj formation. Välj marknad. Skanna aktier.</p></header><section><h2>1. Välj vad du söker</h2><label for="pattern">Ljusformation</label><select id="pattern"><option value="piercing">Piercing Line – 3 ljus</option><option value="engulfing">Bullish Engulfing</option><option value="hammer">Hammer</option></select><label for="market">Marknad</label><select id="market"><option value="SE">🇸🇪 Sverige</option><option value="US">🇺🇸 USA (Nasdaq)</option></select><details><summary>Avancerat: prisintervall</summary><label>Minsta pris</label><input id="min" type="number" value="10"><label>Högsta pris</label><input id="max" type="number" value="800"></details><button id="scan">🔎 SKANNA AKTIER</button><p class="note">Skanningen kräver internetanslutning och tillgängliga börskurser. Inga order läggs.</p></section><section><h2>2. Dina aktier</h2><div class="status" id="status">Redo. Tryck Skanna.</div><p id="stats"></p><div id="results"></div></section><p class="note">Data: öppen, icke-officiell instrumentlista samt extern kurstjänst. Det är inte garanterat att hela marknaden täcks. Vi visar alltid verkligt antal kontrollerade aktier och datafel. Nyaste dagsljuset utesluts tills nästa kalenderdag för att undvika att pågående handel misstas för slutkurs.</p></main><script>
+const $=s=>document.getElementById(s);
+$('market').addEventListener('change',()=>{const us=$('market').value==='US';$('min').value=us?5:10;$('max').value=us?20:800});
+$('scan').addEventListener('click',async()=>{
+$('scan').disabled=true;$('results').textContent='';$('stats').textContent='';$('status').textContent='Startar…';
+try{
+const response=await fetch('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({market:$('market').value,pattern:$('pattern').value,min_price:Number($('min').value),max_price:Number($('max').value)})});
+if(!response.ok)throw Error('Serverfel '+response.status);
+const started=await response.json();if(!started.job)throw Error(started.error||'Ingen skanning kunde startas');
+const job=started.job;let tries=0;
+while(true){
+await new Promise(resolve=>setTimeout(resolve,1700));
+const r=await fetch('/api/scan/'+job);if(!r.ok)throw Error('Statusfel '+r.status);
+const s=await r.json();tries++;
+$('stats').textContent='Instrument: '+s.total+' | Kontrollerade: '+s.checked+' | Bearbetade: '+s.processed+' | Datafel: '+s.errors+' | Träffar: '+s.results.length;
+if(s.state==='done'||s.state==='error'){
+$('status').textContent=s.state==='done'?'Skanning klar.':'Kunde inte skanna: '+s.message;
+const holder=$('results');holder.replaceChildren();
+if(s.state==='done'&&!s.results.length){let p=document.createElement('p');p.textContent='Inga träffar i den del av marknaden som kunnat kontrolleras.';holder.append(p)}
+for(const x of s.results.sort((a,b)=>a.status.localeCompare(b.status))){
+const div=document.createElement('div');div.className='item';
+const title=document.createElement('strong');title.textContent=x.name+' ('+x.ticker+')';
+const p=document.createElement('p');p.textContent=x.status+' · '+x.date+' · Nivå O1: '+x.entry;
+const a=document.createElement('a');a.href=x.tv;a.target='_blank';a.rel='noopener';a.textContent='Öppna TradingView';
+div.append(title,p,a);holder.append(div)}
+if(s.error_examples.length){const d=document.createElement('details');const sum=document.createElement('summary');sum.textContent='Visa exempel på datafel';const pre=document.createElement('pre');pre.textContent=s.error_examples.join('\n');d.append(sum,pre);holder.append(d)}
+break;
+}
+$('status').textContent='Skannar… '+s.processed+' av '+s.total;
+if(tries>600)throw Error('Skanningen tog för lång tid och stoppades i denna vy.');
+}
+}catch(e){$('status').textContent='Fel: '+e.message}
+finally{$('scan').disabled=false}
+});
+</script></body></html>
