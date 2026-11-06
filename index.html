@@ -19,17 +19,19 @@ $('market').addEventListener('change',()=>{
     $('max').value=us?20:800;
 });
 function renderResults(s){
+    const results=Array.isArray(s.results)?s.results:[];
+    const errors=Array.isArray(s.error_examples)?s.error_examples:[];
     $('stats').textContent='Instrument: '+s.total+' | Kontrollerade: '+s.checked+
         ' | Bearbetade: '+s.processed+' | Datafel: '+s.errors+
-        ' | Träffar: '+s.results.length;
+        ' | Träffar: '+results.length;
     const holder=$('results');
     holder.replaceChildren();
-    if(s.state==='done' && !s.results.length){
+    if(s.state==='done' && !results.length){
         const p=document.createElement('p');
         p.textContent='Inga träffar i den del av marknaden som kunnat kontrolleras.';
         holder.append(p);
     }
-    for(const x of s.results.sort((a,b)=>a.status.localeCompare(b.status))){
+    for(const x of [...results].sort((a,b)=>a.status.localeCompare(b.status))){
         const div=document.createElement('div');div.className='item';
         const title=document.createElement('strong');title.textContent=x.name+' ('+x.ticker+')';
         const details=document.createElement('p');details.textContent=x.status+' · '+x.date+' · Nivå O1: '+x.entry;
@@ -37,10 +39,10 @@ function renderResults(s){
         link.textContent='Öppna TradingView';
         div.append(title,details,link);holder.append(div);
     }
-    if(s.error_examples.length){
+    if(errors.length){
         const d=document.createElement('details');
         const summary=document.createElement('summary');summary.textContent='Visa exempel på datafel';
-        const pre=document.createElement('pre');pre.textContent=s.error_examples.join('\n');
+        const pre=document.createElement('pre');pre.textContent=errors.join('\n');
         d.append(summary,pre);holder.append(d);
     }
 }
@@ -54,7 +56,15 @@ async function refresh(){
         networkFails=0;
         if(s.state==='error'&&s.message==='Skanningen hittades inte'){
             setStatus('Servern startades om och tappade den tidigare skanningen. Starta en ny.');
-            activeJob=null;localStorage.removeItem(JOB_KEY);setRunning(false);
+            activeJob=null;try{localStorage.removeItem(JOB_KEY)}catch(e){}setRunning(false);
+            return;
+        }
+        if(s.state==='error' && !Array.isArray(s.results)){
+            const message=s.message||'Servern tappade bort skanningen. Starta en ny.';
+            setStatus('Skanningen avbröts: '+message);
+            activeJob=null;
+            try{localStorage.removeItem(JOB_KEY)}catch(e){}
+            setRunning(false);
             return;
         }
         renderResults(s);
@@ -67,7 +77,7 @@ async function refresh(){
             setRunning(false);
             setStatus(s.state==='done'?'Skanning klar. '+(s.source_note||''):
                 'Kunde inte skanna: '+s.message);
-            activeJob=null;localStorage.removeItem(JOB_KEY);
+            activeJob=null;try{localStorage.removeItem(JOB_KEY)}catch(e){}
         }
     }catch(error){
         networkFails++;
@@ -96,7 +106,7 @@ $('scan').addEventListener('click',async()=>{
         const j=await response.json();
         if(!j.job)throw new Error(j.error||'Skanningen kunde inte starta');
         activeJob=j.job;
-        localStorage.setItem(JOB_KEY,activeJob);
+        try{localStorage.setItem(JOB_KEY,activeJob)}catch(e){}
         schedule(100);
     }catch(error){
         setRunning(false);
