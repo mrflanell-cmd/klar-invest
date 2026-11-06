@@ -1,6 +1,11 @@
 <!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#071826"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="KLAR INVEST"><title>KLAR INVEST – Screener</title><style>
 *{box-sizing:border-box}body{background:#071826;color:#effaff;margin:0;font:16px -apple-system,BlinkMacSystemFont,Arial,sans-serif}main{max-width:760px;margin:auto;padding:26px 17px}header{padding:30px 0 10px}h1{font-size:39px;margin:0;letter-spacing:-1px}h1 span{color:#35dfab}.subtitle{color:#92c8eb;font-size:14px;letter-spacing:1px}section{background:#0d283a;padding:23px;border:1px solid #29516a;border-radius:23px;margin:20px 0}h2{margin:0 0 15px;font-size:23px}label{font-weight:700;display:block;margin:15px 0 8px}select,input{width:100%;background:#071a29;color:white;border:1px solid #608398;border-radius:12px;padding:14px;font-size:18px}button{width:100%;border:0;border-radius:14px;background:#37dfaa;color:#073023;padding:18px;font-size:21px;font-weight:900;margin-top:24px}button:disabled{opacity:.55}details{margin:16px 0;color:#a7d3f1}summary{cursor:pointer}p.note{font-size:14px;color:#b3cad9;line-height:1.5}.status{padding:14px;border-left:4px solid #89ceff;background:#081f31;border-radius:10px}.item{padding:15px;margin:12px 0;background:#081e2e;border:1px solid #295470;border-radius:12px}a{color:#8bceff}.good{color:#46e2ab;font-weight:800}.warn{color:#ffcc83}#stats{font-size:14px;color:#a2cbe2;line-height:1.7}pre{white-space:pre-wrap;word-break:break-word;font-size:12px}.price-detail{font-weight:800;color:#42e3b1;margin-bottom:6px}.entry-detail{color:#b4d6eb;line-height:1.5;margin-top:4px}
-.history-entry{width:100%;background:#103348;color:#f1f9fc;text-align:left;margin:9px 0;padding:14px;font-size:15px;border:1px solid #3d6880;border-radius:12px;font-weight:600;line-height:1.5}.history-entry small{display:block;color:#9fc8df;font-weight:400;margin-top:5px}.secondary-btn{background:#25485c;color:#f2ffff;padding:12px;font-size:15px;margin-top:12px}.history-label{color:#61e5b6;font-weight:800;font-size:13px}.history-empty{color:#aac6d7;font-size:14px}</style></head><body><main><header><h1>KLAR <span>INVEST</span></h1><div class="subtitle">SCREENER · SVERIGE & USA</div><p class="note">Välj formation. Välj marknad. Skanna aktier.</p></header><section><h2>1. Välj vad du söker</h2><label for="pattern">Ljusformation</label><select id="pattern"><option value="piercing">Piercing Line – 3 ljus</option><option value="engulfing">Bullish Engulfing</option><option value="hammer">Hammer</option></select><label for="market">Marknad</label><select id="market"><option value="SE">🇸🇪 Sverige</option><option value="US">🇺🇸 USA (Nasdaq)</option></select><details><summary>Avancerat: prisintervall</summary><label>Minsta pris</label><input id="min" type="number" value="10"><label>Högsta pris</label><input id="max" type="number" value="800"></details><button id="scan">🔎 SKANNA AKTIER</button><p class="note">Skanningen kräver internetanslutning och tillgängliga börskurser. Inga order läggs.</p></section><section><h2>2. Dina aktier</h2><div class="status" id="status">Redo. Tryck Skanna.</div><p id="stats"></p><div id="results"></div></section><section><h2>3. Sökhistorik</h2><p class="note">Sparade sökningar på den här telefonen. Tryck på en sökning för att visa aktierna igen, utan att skanna på nytt.</p><div id="history"></div></section><p class="note">Data: öppen, icke-officiell instrumentlista samt extern kurstjänst. Det är inte garanterat att hela marknaden täcks. Vi visar alltid verkligt antal kontrollerade aktier och datafel. Dagsljus för pågående handel används inte som slutkurser. Sökningen körs på servern och sidan försöker återansluta när du låser upp telefonen. Vid omstart av gratisservern kan pågående sökningar gå förlorade.</p></main><script>
+#commodity-options[hidden],#price-filters[hidden]{display:none}.history-entry{width:100%;background:#103348;color:#f1f9fc;text-align:left;margin:9px 0;padding:14px;font-size:15px;border:1px solid #3d6880;border-radius:12px;font-weight:600;line-height:1.5}.history-entry small{display:block;color:#9fc8df;font-weight:400;margin-top:5px}.secondary-btn{background:#25485c;color:#f2ffff;padding:12px;font-size:15px;margin-top:12px}.history-label{color:#61e5b6;font-weight:800;font-size:13px}.history-empty{color:#aac6d7;font-size:14px}</style></head><body><main><header><h1>KLAR <span>INVEST</span></h1><div class="subtitle">SCREENER · AKTIER & RÅVAROR</div><p class="note">Välj formation. Välj marknad. Skanna aktier.</p></header><section><h2>1. Välj vad du söker</h2><label for="pattern">Ljusformation</label><select id="pattern"><option value="piercing">Piercing Line – 3 ljus</option><option value="engulfing">Bullish Engulfing</option><option value="hammer">Hammer</option></select><label for="market">Marknad</label><select id="market"><option value="SE">🇸🇪 Sverige</option><option value="US">🇺🇸 USA (Nasdaq)</option><option value="COM">🛢️ Råvaror – Commodities</option></select>
+<div id="commodity-options" hidden><label for="commodity-group">Välj råvarugrupp</label>
+<select id="commodity-group"><option value="all">Alla råvaror</option><option value="metals">🥇 Metaller: guld, silver, platina...</option>
+<option value="energy">🛢️ Energi: olja, naturgas...</option><option value="grains">🌾 Spannmål och jordbruk</option>
+<option value="softs">☕ Kaffe, kakao, socker, bomull...</option><option value="livestock">🐄 Nötkreatur och grisar</option></select>
+<p class="note">Råvaror visas som terminskontrakt. Priserna kan vara i USD, USD per fat eller amerikanska cent per pund. Ingen aktieprisgräns tillämpas på råvaror.</p></div><details id="price-filters"><summary>Avancerat: prisintervall</summary><label>Minsta pris</label><input id="min" type="number" value="10"><label>Högsta pris</label><input id="max" type="number" value="800"></details><button id="scan">🔎 SKANNA AKTIER</button><p class="note">Skanningen kräver internetanslutning och tillgängliga börskurser. Inga order läggs.</p></section><section><h2>2. Dina aktier</h2><div class="status" id="status">Redo. Tryck Skanna.</div><p id="stats"></p><div id="results"></div></section><section><h2>3. Sökhistorik</h2><p class="note">Sparade sökningar på den här telefonen. Tryck på en sökning för att visa aktierna igen, utan att skanna på nytt.</p><div id="history"></div></section><p class="note">Data: öppen, icke-officiell instrumentlista samt extern kurstjänst. Det är inte garanterat att hela marknaden täcks. Vi visar alltid verkligt antal kontrollerade aktier och datafel. Dagsljus för pågående handel används inte som slutkurser. Sökningen körs på servern och sidan försöker återansluta när du låser upp telefonen. Vid omstart av gratisservern kan pågående sökningar gå förlorade.</p></main><script>
 const $=id=>document.getElementById(id);
 const JOB_KEY="klarInvestActiveScanV2";
 const HISTORY_KEY="klarInvestSavedHistoryV1";
@@ -32,7 +37,9 @@ function formatTime(value){
 function optionsLabel(o){
   if(!o)return 'Sökning';
   const names={piercing:'Piercing Line – 3 ljus',engulfing:'Bullish Engulfing',hammer:'Hammer'};
-  return (o.market==='US'?'🇺🇸 USA':'🇸🇪 Sverige')+' · '+(names[o.pattern]||o.pattern||'Formation');
+  const groupNames={all:'Alla',metals:'Metaller',energy:'Energi',grains:'Spannmål',softs:'Kaffe/kakao m.m.',livestock:'Boskap'};
+  const place=o.market==='US'?'🇺🇸 USA':o.market==='COM'?'🛢️ Råvaror · '+(groupNames[o.commodity_group]||'Alla'):'🇸🇪 Sverige';
+  return place+' · '+(names[o.pattern]||o.pattern||'Formation');
 }
 function saveSnapshot(s,jobId,opts){
   if(!jobId)return;
@@ -99,7 +106,7 @@ function renderResults(s){
     const close=Number.isFinite(Number(x.last_close))&&x.last_close!=null
       ?Number(x.last_close):(last?Number(last.close):NaN);
     const closeDate=x.last_close_date||last?.date||x.date;
-    const unit=x.currency==='USD'||(!x.currency&&String(x.tv).includes('NASDAQ:'))?'USD':'kr';
+    const unit=x.quote_unit||(x.currency==='USD'||(!x.currency&&String(x.tv).includes('NASDAQ:'))?'USD':'SEK');
     const price=document.createElement('p');
     price.className='price-detail';
     price.textContent=Number.isFinite(close)
@@ -107,7 +114,7 @@ function renderResults(s){
       :'Senaste stängningskurs: saknas i sparade kursdata';
     const entry=document.createElement('p');
     entry.className='entry-detail';
-    entry.textContent='Planerad köpnivå (O1 – första röda ljusets öppning): '+
+    entry.textContent='Referens-/köpnivå (O1 – första röda ljusets öppning): '+
       Number(x.entry).toLocaleString('sv-SE',{maximumFractionDigits:4})+' '+unit;
     const a=document.createElement('a');a.href=x.tv;a.target='_blank';a.rel='noopener';a.textContent='Öppna TradingView';
     div.append(title,status,price,entry,a);holder.append(div);
@@ -171,14 +178,21 @@ async function refresh(){
     schedule(Math.min(20000,2500*networkFails));
   }finally{refreshBusy=false}
 }
-$('market').addEventListener('change',()=>{
-  const us=$('market').value==='US';$('min').value=us?5:10;$('max').value=us?20:800;
-});
+function syncMarketUI(){
+  const market=$('market').value;
+  $('commodity-options').hidden=market!=='COM';
+  $('price-filters').hidden=market==='COM';
+  if(market==='US'){$('min').value=5;$('max').value=20}
+  if(market==='SE'){$('min').value=10;$('max').value=800}
+}
+$('market').addEventListener('change',syncMarketUI);
+
 $('scan').addEventListener('click',async()=>{
   if(activeJob)return;
   setRunning(true);
   const opts={market:$('market').value,pattern:$('pattern').value,
-    min_price:Number($('min').value),max_price:Number($('max').value)};
+    min_price:Number($('min').value),max_price:Number($('max').value),
+    commodity_group:$('commodity-group').value};
   $('results').replaceChildren();$('stats').textContent='';setStatus('Startar sökning…');
   try{
     const r=await fetch('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -194,6 +208,7 @@ $('scan').addEventListener('click',async()=>{
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&activeJob)schedule(100)});
 window.addEventListener('pageshow',()=>{if(activeJob)schedule(100)});
 window.addEventListener('online',()=>{if(activeJob)schedule(100)});
+syncMarketUI();
 drawHistory();
 const mostRecent=historyEntries()[0];
 if(mostRecent&&mostRecent.data)showSaved(mostRecent,false);
