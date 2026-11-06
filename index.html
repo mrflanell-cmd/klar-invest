@@ -16,7 +16,7 @@ const r=await fetch('/api/scan/'+job);if(!r.ok)throw Error('Statusfel '+r.status
 const s=await r.json();tries++;
 $('stats').textContent='Instrument: '+s.total+' | Kontrollerade: '+s.checked+' | Bearbetade: '+s.processed+' | Datafel: '+s.errors+' | Träffar: '+s.results.length;
 if(s.state==='done'||s.state==='error'){
-$('status').textContent=s.state==='done'?'Skanning klar.':'Kunde inte skanna: '+s.message;
+$('status').textContent=s.state==='done'?'Skanning klar. '+(s.source_note||''):'Kunde inte skanna: '+s.message;
 const holder=$('results');holder.replaceChildren();
 if(s.state==='done'&&!s.results.length){let p=document.createElement('p');p.textContent='Inga träffar i den del av marknaden som kunnat kontrolleras.';holder.append(p)}
 for(const x of s.results.sort((a,b)=>a.status.localeCompare(b.status))){
