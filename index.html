@@ -169,36 +169,120 @@ async function refresh(){
   refreshBusy=true;
   try{
     const response=await fetch('/api/scan/'+encodeURIComponent(activeJob),{cache:'no-store'});
-    if(!response.ok)throw new Error('Servern svarade '+response.status);
-    const s=await response.json();
+    if(!response.ok)throw Error('Servern svarade '+response.status);
+    const scan=await response.json();
     networkFails=0;
-    if(s.state==='error'&&!Array.isArray(s.results)){
-      const entry=historyEntries().find(x=>x.id===activeJob);
-      if(entry&&entry.data){
-        entry.data.state='interrupted';
-        saveSnapshot(entry.data,activeJob,activeOptions);
-        renderResults(entry.data);
-      }
-      setStatus('Skanningen avbröts på servern. Tidigare hittade aktier finns kvar i Sökhistorik.');
+    if(scan.state==='missing'){
+      const old=historyEntries().find(e=>e.id===activeJob);
+      if(old?.data){
+        old.data.state='interrupted';
+        saveSnapshot(old.data,old.id,old.options||activeOptions);
+        renderResults(old.data);
+        setStatus('Servern startades om. Din sökning finns sparad. Tryck Fortsätt.');
+      }else setStatus('Servern tappade sökningen. Starta en ny.');
       stopActive();return;
     }
-    saveSnapshot(s,activeJob,activeOptions);
-    renderResults(s);
-    if(s.state==='running'){
+    saveSnapshot(scan,activeJob,activeOptions);
+    renderResults(scan);
+    if(scan.state==='running'){
       setRunning(true);
-      setStatus('Skannar på servern: '+s.processed+' av '+s.total+
-        '. Aktierna sparas i Sökhistorik. Du kan låsa telefonen.');
+      if(scan.pause_requested){
+        requestedPause=true;
+        setStatus('Pausar när de sista pågående aktierna har kontrollerats…');
+      }else{
+        setStatus('Skannar på servern: '+scan.processed+' av '+scan.total+
+          '. Du kan låsa skärmen, resultaten sparas i Sökhistorik.');
+      }
       schedule();
+    }else if(scan.state==='paused'){
+      setStatus('⏸ Pausad vid '+scan.processed+' av '+scan.total+'. Tryck Fortsätt när du vill.');
+      requestedPause=false;
+      stopActive();
     }else{
-      setStatus(s.state==='done'?'Skanning klar och sparad i Sökhistorik. '+(s.source_note||''):
-        'Skanningen avbröts. Det som hittats är sparat. '+(s.message||''));
+      setStatus(scan.state==='done'?'Skanning klar. Resultatet finns i Sökhistorik. '+(scan.source_note||''):
+        'Sökningen avbröts. Sparad kontrollpunkt finns i Sökhistorik. '+(scan.message||''));
+      requestedPause=false;
       stopActive();
     }
   }catch(error){
     networkFails++;
-    setStatus('Statusanslutningen bröts. Senast sparade aktier finns i Sökhistorik. Försöker ansluta igen…');
+    setStatus('Kan inte nå servern nu. Senaste kontrollpunkten finns sparad. Återansluter…');
     schedule(Math.min(20000,2500*networkFails));
   }finally{refreshBusy=false}
+}
+function checkpointFromEntry(entry){
+  if(!entry?.data)return null;
+  const d=entry.data;
+  if(!Array.isArray(d.items)||!d.items.length||!Array.isArray(d.completed_symbols)){
+    return null;
+  }
+  return {items:d.items,completed_symbols:d.completed_symbols,results:d.results||[],
+    errors:d.errors||0,error_examples:d.error_examples||[],source_note:d.source_note||''};
+}
+async function beginScan(opts,checkpoint=null){
+  if(activeJob)return;
+  setRunning(true);
+  $('results').replaceChildren();$('stats').textContent='';
+  setStatus(checkpoint?'Återupptar sökningen där den slutade…':'Startar en ny sökning…');
+  try{
+    const body={...opts};
+    if(checkpoint)body.checkpoint=checkpoint;
+    const r=await fetch('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)});
+    if(!r.ok)throw Error('Serverfel '+r.status);
+    const j=await r.json();
+    if(!j.job)throw Error(j.error||'Skanningen kunde inte starta');
+    activeJob=j.job;activeOptions=opts;requestedPause=false;pausedEntry=null;
+    storageWrite(JOB_KEY,{id:activeJob,options:opts});
+    if(checkpoint)saveSnapshot({...checkpoint,state:'running',total:checkpoint.items.length,
+      processed:checkpoint.completed_symbols.length,
+      checked:checkpoint.completed_symbols.length-(checkpoint.errors||0)},activeJob,opts);
+    else saveSnapshot({state:'running',total:0,checked:0,processed:0,
+      errors:0,results:[],error_examples:[],items:[],completed_symbols:[]},activeJob,opts);
+    updateControls();schedule(100);
+  }catch(error){
+    setStatus('Kunde inte starta: '+error.message);
+    stopActive();
+  }
+}
+async function pauseScan(){
+  if(!activeJob)return;
+  requestedPause=true;updateControls();
+  setStatus('Begär paus från servern…');
+  try{
+    const r=await fetch('/api/scan/'+encodeURIComponent(activeJob)+'/pause',{method:'POST'});
+    if(!r.ok)throw Error('Serverfel '+r.status);
+    await refresh();
+  }catch(error){
+    requestedPause=false;
+    setStatus('Kunde inte pausa just nu: '+error.message);
+    updateControls();
+  }
+}
+async function resumeScan(){
+  if(activeJob)return;
+  const entry=pausedEntry||historyEntries().find(e=>e.data?.state==='paused'||e.data?.state==='interrupted');
+  if(!entry)return;
+  const checkpoint=checkpointFromEntry(entry);
+  if(!checkpoint){
+    setStatus('Den här gamla sökningen saknar kontrollpunkter. Ny skanning krävs.');
+    return;
+  }
+  const opts=entry.options;
+  if(!opts){setStatus('Saknar sökfilter från tidigare sökning.');return}
+  // Try old server job first when merely paused; otherwise restore in a new server job.
+  if(entry.data.state==='paused'){
+    try{
+      const r=await fetch('/api/scan/'+encodeURIComponent(entry.id)+'/resume',{method:'POST'});
+      const j=await r.json();
+      if(r.ok&&(j.state==='running'||j.state==='done')){
+        activeJob=entry.id;activeOptions=opts;pausedEntry=null;
+        storageWrite(JOB_KEY,{id:activeJob,options:opts});
+        setRunning(true);schedule(100);return;
+      }
+    }catch(error){}
+  }
+  await beginScan(opts,checkpoint);
 }
 function syncMarketUI(){
   const market=$('market').value;
@@ -209,23 +293,19 @@ function syncMarketUI(){
 }
 $('market').addEventListener('change',syncMarketUI);
 
-$('scan').addEventListener('click',async()=>{
-  if(activeJob)return;
-  setRunning(true);
-  const opts={market:$('market').value,pattern:$('pattern').value,
+function currentOptions(){
+  return {market:$('market').value,pattern:$('pattern').value,
     min_price:Number($('min').value),max_price:Number($('max').value),
     commodity_group:$('commodity-group').value};
-  $('results').replaceChildren();$('stats').textContent='';setStatus('Startar sökning…');
-  try{
-    const r=await fetch('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(opts)});
-    if(!r.ok)throw new Error('Serverfel '+r.status);
-    const j=await r.json();if(!j.job)throw new Error(j.error||'Skanning kunde inte starta');
-    activeJob=j.job;activeOptions=opts;
-    storageWrite(JOB_KEY,{id:activeJob,options:opts});
-    saveSnapshot({state:'running',total:0,checked:0,processed:0,errors:0,results:[],error_examples:[]},activeJob,opts);
-    schedule(100);
-  }catch(error){setStatus('Kunde inte starta: '+error.message);stopActive()}
+}
+$('scan').addEventListener('click',()=>beginScan(currentOptions()));
+$('pause-scan').addEventListener('click',pauseScan);
+$('resume-scan').addEventListener('click',resumeScan);
+$('new-scan').addEventListener('click',()=>{
+  if(activeJob){setStatus('Pausa först den pågående sökningen.');return}
+  pausedEntry=null;
+  updateControls();
+  beginScan(currentOptions());
 });
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&activeJob)schedule(100)});
 window.addEventListener('pageshow',()=>{if(activeJob)schedule(100)});
@@ -234,14 +314,17 @@ syncMarketUI();
 drawHistory();
 const mostRecent=historyEntries()[0];
 if(mostRecent&&mostRecent.data)showSaved(mostRecent,false);
+if(mostRecent&&mostRecent.data&&mostRecent.data.state!=='done')pausedEntry=mostRecent;
 const savedJob=storageRead(JOB_KEY,null);
 if(savedJob){
   activeJob=typeof savedJob==='string'?savedJob:savedJob.id;
   activeOptions=typeof savedJob==='object'?savedJob.options:null;
   if(activeJob){
+    pausedEntry=null;
     setRunning(true);
     setStatus('Återansluter till pågående skanning. Senaste resultaten finns i Sökhistorik.');
     schedule(100);
   }
 }
+updateControls();
 </script></body></html>
