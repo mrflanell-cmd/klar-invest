@@ -162,6 +162,10 @@ def history(item,market):
         o,h,l,c=vals
         if min(vals)<=0 or h<max(o,c) or l>min(o,c):continue
         date=dt.datetime.fromtimestamp(t,zone).date()
+        # Futures can have overnight sessions; wait until the next calendar day
+        # rather than mistaking a partially formed futures daily bar for a close.
+        if market=="COM" and date>=now.date():
+            continue
         if date>now.date() or (date==now.date() and now.time()<close_time):
             continue
         bars.append({"date":str(date),"open":o,"high":h,"low":l,"close":c})
