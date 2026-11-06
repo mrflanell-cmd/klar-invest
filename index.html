@@ -95,7 +95,8 @@ const MAX_HISTORY=8;
 let activeJob=null, activeOptions=null, pollingTimer=null, refreshBusy=false, networkFails=0, pausedEntry=null, requestedPause=false;
 const setStatus=message=>{$('status').textContent=message};
 const setRunning=running=>{
-  updateWisdomLoading(running);
+  if(!running)updateWisdomLoading(false);
+  else if($('scan-tip').hidden)updateWisdomLoading(true);
   $('scan').disabled=running;
   $('scan').textContent=running?'⏳ SKANNAR PÅ SERVERN':'🔎 SKANNA AKTIER';
   updateControls();
