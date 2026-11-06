@@ -140,7 +140,7 @@ def detect(bars,pattern,low,high):
         if not(body>0 and min(c["open"],c["close"])-c["low"]>=2*body and c["high"]-max(c["open"],c["close"])<=body):return None
         status="MÖNSTERTRÄFF";entry=c["open"]
     else:return None
-    return {"status":status,"date":c["date"],"entry":round(entry,4),"bars":bars[-3:]}
+    return {"status":status,"date":c["date"],"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
 
 def do_scan(job_id,options):
     job=JOBS[job_id]
@@ -163,7 +163,7 @@ def do_scan(job_id,options):
                 else:
                     job["checked"]+=1
                     if match:
-                        match.update({"name":item["name"],"ticker":item["ticker"],"tv":"https://www.tradingview.com/chart/?symbol="+("OMXSTO:" if options.market=="SE" else "NASDAQ:")+item["ticker"]+"&interval=D"})
+                        match.update({"name":item["name"],"ticker":item["ticker"],"currency":"SEK" if options.market=="SE" else "USD","tv":"https://www.tradingview.com/chart/?symbol="+("OMXSTO:" if options.market=="SE" else "NASDAQ:")+item["ticker"]+"&interval=D"})
                         job["results"].append(match)
         job["state"]="done"
     except Exception as e:
