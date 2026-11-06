@@ -15,6 +15,48 @@ class ScanOptions(BaseModel):
     pattern:str="piercing"
     min_price:float=10
     max_price:float=800
+    commodity_group:str="all"
+
+# Curated exchange-traded futures universe. Price quotation units differ by contract.
+COMMODITIES = [
+    ("GC=F","Guld","metals","COMEX:GC1!","USD/oz"),
+    ("SI=F","Silver","metals","COMEX:SI1!","USD/oz"),
+    ("PL=F","Platina","metals","NYMEX:PL1!","USD/oz"),
+    ("PA=F","Palladium","metals","NYMEX:PA1!","USD/oz"),
+    ("HG=F","Koppar","metals","COMEX:HG1!","USD/lb"),
+    ("CL=F","WTI råolja","energy","NYMEX:CL1!","USD/fat"),
+    ("BZ=F","Brentolja","energy","ICEEUR:BRN1!","USD/fat"),
+    ("NG=F","Naturgas","energy","NYMEX:NG1!","USD/MMBtu"),
+    ("RB=F","Bensin RBOB","energy","NYMEX:RB1!","USD/gallon"),
+    ("HO=F","Eldningsolja","energy","NYMEX:HO1!","USD/gallon"),
+    ("ZW=F","Vete","grains","CBOT:ZW1!","US¢/bushel"),
+    ("ZC=F","Majs","grains","CBOT:ZC1!","US¢/bushel"),
+    ("ZS=F","Sojabönor","grains","CBOT:ZS1!","US¢/bushel"),
+    ("ZO=F","Havre","grains","CBOT:ZO1!","US¢/bushel"),
+    ("ZR=F","Ris","grains","CBOT:ZR1!","USD/cwt"),
+    ("ZM=F","Sojamjöl","grains","CBOT:ZM1!","USD/short ton"),
+    ("ZL=F","Sojaolja","grains","CBOT:ZL1!","US¢/lb"),
+    ("KC=F","Kaffe","softs","ICEUS:KC1!","US¢/lb"),
+    ("CC=F","Kakao","softs","ICEUS:CC1!","USD/ton"),
+    ("SB=F","Socker","softs","ICEUS:SB1!","US¢/lb"),
+    ("CT=F","Bomull","softs","ICEUS:CT1!","US¢/lb"),
+    ("OJ=F","Apelsinjuice","softs","ICEUS:OJ1!","US¢/lb"),
+    ("LE=F","Levande nötkreatur","livestock","CME:LE1!","US¢/lb"),
+    ("GF=F","Ungnöt","livestock","CME:GF1!","US¢/lb"),
+    ("HE=F","Grisar","livestock","CME:HE1!","US¢/lb"),
+]
+
+def commodity_universe(group="all"):
+    if group not in ("all","metals","energy","grains","softs","livestock"):
+        raise ValueError("Okänd råvarugrupp.")
+    instruments = [
+        {"ticker":ticker,"symbol":ticker,"name":name,"group":category,
+         "tv_symbol":tv_symbol,"quote_unit":unit}
+        for ticker,name,category,tv_symbol,unit in COMMODITIES
+        if group=="all" or category==group
+    ]
+    return instruments, ("Utvalda råvaruterminer: "+str(len(instruments))+
+        " instrument. Inte samtliga terminskontrakt på marknaden.")
 
 def get_json_with_retries(url, params):
     last_error = None
@@ -30,6 +72,8 @@ def get_json_with_retries(url, params):
     raise last_error
 
 def universe(market):
+    if market == "COM":
+        return commodity_universe("all")
     if market == "US":
         r = requests.get("https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt", timeout=25)
         r.raise_for_status()
@@ -104,7 +148,10 @@ def history(item,market):
     result=r.json().get("chart",{}).get("result") or []
     if not result:raise ValueError("Inga kursdata")
     d=result[0]
-    if d.get("meta",{}).get("currency")!=("SEK" if market=="SE" else "USD"):raise ValueError("Fel valuta")
+    raw_currency=d.get("meta",{}).get("currency")
+    if market=="SE" and raw_currency!="SEK":raise ValueError("Fel valuta")
+    if market=="US" and raw_currency!="USD":raise ValueError("Fel valuta")
+    if market=="COM" and raw_currency not in ("USD","USX","USd"):raise ValueError("Råvaruvaluta ej verifierad: "+str(raw_currency))
     quote=d["indicators"]["quote"][0];bars=[]
     zone=ZoneInfo("Europe/Stockholm" if market=="SE" else "America/New_York")
     now=dt.datetime.now(zone)
@@ -145,13 +192,16 @@ def detect(bars,pattern,low,high):
 def do_scan(job_id,options):
     job=JOBS[job_id]
     try:
-        items,note=universe(options.market)
+        items,note=(commodity_universe(options.commodity_group) if options.market=="COM"
+                    else universe(options.market))
         job["source_note"]=note
         job["total"]=len(items)
         def scan_one(item):
             try:
                 bars=history(item,options.market)
-                return item,detect(bars,options.pattern,options.min_price,options.max_price),None
+                min_price=0 if options.market=="COM" else options.min_price
+                max_price=1e12 if options.market=="COM" else options.max_price
+                return item,detect(bars,options.pattern,min_price,max_price),None
             except Exception as e:return item,None,str(e)[:100]
         with ThreadPoolExecutor(max_workers=5) as executor:
             for f in as_completed([executor.submit(scan_one,item) for item in items]):
@@ -163,7 +213,12 @@ def do_scan(job_id,options):
                 else:
                     job["checked"]+=1
                     if match:
-                        match.update({"name":item["name"],"ticker":item["ticker"],"currency":"SEK" if options.market=="SE" else "USD","tv":"https://www.tradingview.com/chart/?symbol="+("OMXSTO:" if options.market=="SE" else "NASDAQ:")+item["ticker"]+"&interval=D"})
+                        match.update({"name":item["name"],"ticker":item["ticker"],
+                            "currency":"SEK" if options.market=="SE" else "USD",
+                            "quote_unit":item.get("quote_unit","SEK" if options.market=="SE" else "USD"),
+                            "tv":"https://www.tradingview.com/chart/?symbol="+
+                            requests.utils.quote(item.get("tv_symbol",
+                                ("OMXSTO:" if options.market=="SE" else "NASDAQ:")+item["ticker"]),safe="")+"&interval=D"})
                         job["results"].append(match)
         job["state"]="done"
     except Exception as e:
@@ -175,7 +230,7 @@ def root():
 
 @app.post("/api/scan")
 def start(o:ScanOptions):
-    if o.market not in ("SE","US") or o.pattern not in ("piercing","engulfing","hammer"):
+    if o.market not in ("SE","US","COM") or o.pattern not in ("piercing","engulfing","hammer"):
         return {"error":"Okända filter"}
     job=str(uuid.uuid4())
     JOBS[job]={"state":"running","total":0,"processed":0,"checked":0,"errors":0,"error_examples":[],"results":[],"message":"","source_note":""}
