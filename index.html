@@ -1,11 +1,93 @@
 <!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#071826"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="KLAR INVEST"><title>KLAR INVEST – Screener</title><style>
 *{box-sizing:border-box}body{background:#071826;color:#effaff;margin:0;font:16px -apple-system,BlinkMacSystemFont,Arial,sans-serif}main{max-width:760px;margin:auto;padding:26px 17px}header{padding:30px 0 10px}h1{font-size:39px;margin:0;letter-spacing:-1px}h1 span{color:#35dfab}.subtitle{color:#92c8eb;font-size:14px;letter-spacing:1px}section{background:#0d283a;padding:23px;border:1px solid #29516a;border-radius:23px;margin:20px 0}h2{margin:0 0 15px;font-size:23px}label{font-weight:700;display:block;margin:15px 0 8px}select,input{width:100%;background:#071a29;color:white;border:1px solid #608398;border-radius:12px;padding:14px;font-size:18px}button{width:100%;border:0;border-radius:14px;background:#37dfaa;color:#073023;padding:18px;font-size:21px;font-weight:900;margin-top:24px}button:disabled{opacity:.55}details{margin:16px 0;color:#a7d3f1}summary{cursor:pointer}p.note{font-size:14px;color:#b3cad9;line-height:1.5}.status{padding:14px;border-left:4px solid #89ceff;background:#081f31;border-radius:10px}.item{padding:15px;margin:12px 0;background:#081e2e;border:1px solid #295470;border-radius:12px}a{color:#8bceff}.good{color:#46e2ab;font-weight:800}.warn{color:#ffcc83}#stats{font-size:14px;color:#a2cbe2;line-height:1.7}pre{white-space:pre-wrap;word-break:break-word;font-size:12px}.scan-controls button{margin-top:10px;background:#244c62;color:#f1fbff;font-size:16px;padding:13px}.scan-controls #resume-scan{background:#37dfaa;color:#073023}.scan-controls button[hidden]{display:none}.scan-controls button:disabled{opacity:.5}.price-detail{font-weight:800;color:#42e3b1;margin-bottom:6px}.entry-detail{color:#b4d6eb;line-height:1.5;margin-top:4px}
-#commodity-options[hidden],#price-filters[hidden]{display:none}.history-entry{width:100%;background:#103348;color:#f1f9fc;text-align:left;margin:9px 0;padding:14px;font-size:15px;border:1px solid #3d6880;border-radius:12px;font-weight:600;line-height:1.5}.history-entry small{display:block;color:#9fc8df;font-weight:400;margin-top:5px}.secondary-btn{background:#25485c;color:#f2ffff;padding:12px;font-size:15px;margin-top:12px}.history-label{color:#61e5b6;font-weight:800;font-size:13px}.history-empty{color:#aac6d7;font-size:14px}</style></head><body><main><header><h1>KLAR <span>INVEST</span></h1><div class="subtitle">SCREENER · AKTIER & RÅVAROR</div><p class="note">Välj formation. Välj marknad. Skanna aktier.</p></header><section><h2>1. Välj vad du söker</h2><label for="pattern">Ljusformation</label><select id="pattern"><option value="piercing">Piercing Line – 3 ljus</option><option value="engulfing">Bullish Engulfing</option><option value="hammer">Hammer</option></select><label for="market">Marknad</label><select id="market"><option value="SE">🇸🇪 Sverige</option><option value="US">🇺🇸 USA (Nasdaq)</option><option value="COM">🛢️ Råvaror – Commodities</option></select>
+#commodity-options[hidden],#price-filters[hidden]{display:none}.history-entry{width:100%;background:#103348;color:#f1f9fc;text-align:left;margin:9px 0;padding:14px;font-size:15px;border:1px solid #3d6880;border-radius:12px;font-weight:600;line-height:1.5}.history-entry small{display:block;color:#9fc8df;font-weight:400;margin-top:5px}.secondary-btn{background:#25485c;color:#f2ffff;padding:12px;font-size:15px;margin-top:12px}.history-label{color:#61e5b6;font-weight:800;font-size:13px}.history-empty{color:#aac6d7;font-size:14px}.ki-tabs{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0 19px}.ki-tabs button{margin:0;font-size:15px;padding:13px 8px;background:#15364b;color:#d1e6f1;border:1px solid #35647a}.ki-tabs button.active{background:#2ed6a2;color:#073323;border-color:#2ed6a2}.ki-tabview[hidden],.ki-tip[hidden],#daily-view[hidden]{display:none}.ki-tip{margin:16px 0;padding:17px;border-radius:16px;background:linear-gradient(130deg,#103c4b,#10283e);border:1px solid #397983}.ki-eyebrow{color:#61e5b6;font-size:12px;letter-spacing:1px;font-weight:800;text-transform:uppercase}.ki-quote{font-size:18px;line-height:1.52;font-weight:650;margin:10px 0}.ki-tip-author{color:#a7c9db;font-size:13px}.ki-next{margin-top:12px;padding:10px 14px;font-size:14px;border:1px solid #427789;background:#173c4e;color:#e1f9f9;width:auto}.ki-reflection{line-height:1.5;color:#c5dce9;margin:10px 0}.ki-wisdom-label{margin:8px 0;color:#a4c8d9;font-size:14px}.ki-today{font-size:14px;color:#69e4b5}.ki-progress{height:5px;background:#17405a;border-radius:10px;overflow:hidden;margin-top:14px}.ki-progress>span{display:block;height:100%;background:#34dca6;width:0;transition:width .25s}.ki-date{margin-top:12px}</style></head><body><main><header><h1>KLAR <span>INVEST</span></h1><div class="subtitle">SCREENER · AKTIER & RÅVAROR</div><p class="note">Välj formation. Välj marknad. Skanna aktier.</p></header><nav class="ki-tabs" aria-label="Välj flik"><button type="button" id="tab-scanner" class="active" aria-pressed="true">🔎 Skanner</button><button type="button" id="tab-wisdom" aria-pressed="false">📖 Trading Wisdom</button></nav><div id="scanner-view" class="ki-tabview"><section><h2>1. Välj vad du söker</h2><label for="pattern">Ljusformation</label><select id="pattern"><option value="piercing">Piercing Line – 3 ljus</option><option value="engulfing">Bullish Engulfing</option><option value="hammer">Hammer</option></select><label for="market">Marknad</label><select id="market"><option value="SE">🇸🇪 Sverige</option><option value="US">🇺🇸 USA (Nasdaq)</option><option value="COM">🛢️ Råvaror – Commodities</option></select>
 <div id="commodity-options" hidden><label for="commodity-group">Välj råvarugrupp</label>
 <select id="commodity-group"><option value="all">Alla råvaror</option><option value="metals">🥇 Metaller: guld, silver, platina...</option>
 <option value="energy">🛢️ Energi: olja, naturgas...</option><option value="grains">🌾 Spannmål och jordbruk</option>
 <option value="softs">☕ Kaffe, kakao, socker, bomull...</option><option value="livestock">🐄 Nötkreatur och grisar</option></select>
-<p class="note">Råvaror visas som terminskontrakt. Priserna kan vara i USD, USD per fat eller amerikanska cent per pund. Ingen aktieprisgräns tillämpas på råvaror.</p></div><details id="price-filters"><summary>Avancerat: prisintervall</summary><label>Minsta pris</label><input id="min" type="number" value="10"><label>Högsta pris</label><input id="max" type="number" value="800"></details><button id="scan">🔎 SKANNA AKTIER</button><div class="scan-controls"><button id="pause-scan" type="button" hidden>⏸ Pausa sökning</button><button id="resume-scan" type="button" hidden>▶ Fortsätt senaste pausade sökningen</button><button id="new-scan" type="button" hidden>↻ Ny sökning</button></div><p class="note">Skanningen kräver internetanslutning och tillgängliga börskurser. Inga order läggs.</p></section><section><h2>2. Dina aktier</h2><div class="status" id="status">Redo. Tryck Skanna.</div><p id="stats"></p><div id="results"></div></section><section><h2>3. Sökhistorik</h2><p class="note">Sparade sökningar på den här telefonen. Tryck på en sökning för att visa aktierna igen, utan att skanna på nytt.</p><div id="history"></div></section><p class="note">Data: öppen, icke-officiell instrumentlista samt extern kurstjänst. Det är inte garanterat att hela marknaden täcks. Vi visar alltid verkligt antal kontrollerade aktier och datafel. Dagsljus för pågående handel används inte som slutkurser. Sökningen körs på servern och sidan försöker återansluta när du låser upp telefonen. Vid omstart av gratisservern kan pågående sökningar gå förlorade.</p></main><script>
+<p class="note">Råvaror visas som terminskontrakt. Priserna kan vara i USD, USD per fat eller amerikanska cent per pund. Ingen aktieprisgräns tillämpas på råvaror.</p></div><details id="price-filters"><summary>Avancerat: prisintervall</summary><label>Minsta pris</label><input id="min" type="number" value="10"><label>Högsta pris</label><input id="max" type="number" value="800"></details><button id="scan">🔎 SKANNA AKTIER</button><div class="scan-controls"><button id="pause-scan" type="button" hidden>⏸ Pausa sökning</button><button id="resume-scan" type="button" hidden>▶ Fortsätt senaste pausade sökningen</button><button id="new-scan" type="button" hidden>↻ Ny sökning</button></div><p class="note">Skanningen kräver internetanslutning och tillgängliga börskurser. Inga order läggs.</p></section><section><h2>2. Dina aktier</h2><div class="status" id="status">Redo. Tryck Skanna.</div><p id="stats"></p><div class="ki-progress" id="scan-progress" hidden><span id="scan-progress-bar"></span></div><div class="ki-tip" id="scan-tip" hidden aria-live="off"><div class="ki-eyebrow">💡 Medan marknaden skannas</div><p id="scan-tip-quote" class="ki-quote"></p><div id="scan-tip-author" class="ki-tip-author"></div><button type="button" class="ki-next" id="scan-next-tip">Visa ett annat tips ↻</button></div><div id="results"></div></section><section><h2>3. Sökhistorik</h2><p class="note">Sparade sökningar på den här telefonen. Tryck på en sökning för att visa aktierna igen, utan att skanna på nytt.</p><div id="history"></div></section></div><section class="ki-tabview" id="daily-view" hidden><div class="ki-eyebrow">365 Days of Trading Wisdom</div><h2>📖 Dagens tradingvisdom</h2><div class="ki-today" id="wisdom-date"></div><p class="ki-quote" id="wisdom-quote"></p><div class="ki-tip-author" id="wisdom-author"></div><p class="ki-reflection" id="wisdom-reflection"></p><button type="button" id="wisdom-next" class="ki-next">Nästa citat ↻</button><button type="button" id="wisdom-today" class="ki-next">Visa dagens citat</button><p class="note">Ett urval citat ur bokidén tillsammans med nya tips för KLAR INVEST. Ännu inte hela bokens 365 färdiga sidor. Visdomsord är påminnelser, inte köpsignaler.</p></section><p class="note">Data: öppen, icke-officiell instrumentlista samt extern kurstjänst. Det är inte garanterat att hela marknaden täcks. Vi visar alltid verkligt antal kontrollerade aktier och datafel. Dagsljus för pågående handel används inte som slutkurser. Sökningen körs på servern och sidan försöker återansluta när du låser upp telefonen. Vid omstart av gratisservern kan pågående sökningar gå förlorade.</p></main><script>
+const WISDOM = [
+ {q:"The signal doesn’t make the trade. The context does.",author:"365 Days of Trading Wisdom · Karl Norberg",reflection:"En signal är början på en kontroll, inte ett löfte om avkastning."},
+ {q:"You don’t have to trade every day. Another opportunity will come.",author:"365 Days of Trading Wisdom",reflection:"Att avstå är också ett aktivt beslut."},
+ {q:"The day you stop chasing the market is the day you give yourself a chance to understand it.",author:"365 Days of Trading Wisdom · Karl Norberg",reflection:"Låt priset komma till din planerade nivå. Tvinga inte fram en affär."},
+ {q:"If just one page in this book changes the way you see the market, then every word was worth writing.",author:"Karl Norberg",reflection:"Kunskap får störst värde när den förändrar våra vanor."},
+ {q:"En utebliven affär kostar inget av ditt riskkapital.",author:"KLAR INVEST · Tradingtips",reflection:"Om priset inte når din nivå kan du låta ordern förbli ofylld."},
+ {q:"Ingen bekräftelse betyder ingen bekräftad signal.",author:"KLAR INVEST · Tradingtips",reflection:"Kontrollera alltid att det tredje ljuset verkligen har stängt."},
+ {q:"Risken ska vara känd innan du trycker köp.",author:"KLAR INVEST · Tradingtips",reflection:"Räkna antal aktier från köppris och stop loss, inte från en magkänsla."},
+ {q:"En stop loss är en plan, inte en garanti för exakt säljpris.",author:"KLAR INVEST · Tradingtips",reflection:"Gap och slippage kan göra den verkliga förlusten större än den planerade."},
+ {q:"Journalföring gör ett mönster möjligt att utvärdera.",author:"KLAR INVEST · Tradingtips",reflection:"Anteckna signal, köp, risk, exit och varför affären togs."},
+ {q:"En enskild vinst bevisar inte att strategin fungerar.",author:"KLAR INVEST · Tradingtips",reflection:"Bedöm en serie affärer – inte bara gårdagens resultat."},
+ {q:"Tålamod är också en del av en mekanisk strategi.",author:"KLAR INVEST · Tradingtips",reflection:"Konsekvens ger ett mer jämförbart underlag."},
+ {q:"Fler indikatorer gör inte automatiskt en signal bättre.",author:"KLAR INVEST · Tradingtips",reflection:"Använd EMA, SMA, RSI och ATR med ett tydligt syfte."},
+ {q:"När du ändrar ett filter ändrar du också testet.",author:"KLAR INVEST · Tradingtips",reflection:"Spara reglerna som gällde när en affär genomfördes."},
+ {q:"Kursen berättar vad som hänt, inte vad som säkert händer sedan.",author:"KLAR INVEST · Tradingtips",reflection:"Ett tydligt mönster kan fortfarande misslyckas."},
+ {q:"Kontrollera alltid vilken valuta du tittar på.",author:"KLAR INVEST · Tradingtips",reflection:"SEK och USD skiljer sig; råvaror har dessutom olika noteringsenheter."},
+ {q:"En råvarutermin är inte samma produkt som ett certifikat.",author:"KLAR INVEST · Tradingtips",reflection:"Kontrakt, löptid och prisenhet spelar roll."}
+];
+let tipIndex=0;
+let tipTimer=null;
+let showingDailyIndex=0;
+function wisdomDayIndex(){
+ const now=new Date(), yr=now.getFullYear();
+ const first=new Date(yr,0,1);
+ const day=Math.floor((new Date(yr,now.getMonth(),now.getDate())-first)/86400000);
+ return day%WISDOM.length;
+}
+function paintTip(){
+ const t=WISDOM[tipIndex%WISDOM.length];
+ $('scan-tip-quote').textContent='“'+t.q+'”';
+ $('scan-tip-author').textContent=t.author;
+}
+function paintDaily(){
+ const t=WISDOM[showingDailyIndex%WISDOM.length];
+ $('wisdom-date').textContent=new Date().toLocaleDateString('sv-SE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+ $('wisdom-quote').textContent='“'+t.q+'”';
+ $('wisdom-author').textContent=t.author;
+ $('wisdom-reflection').textContent=t.reflection;
+}
+function switchTab(name){
+ const scanner=name==='scanner';
+ $('scanner-view').hidden=!scanner;
+ $('daily-view').hidden=scanner;
+ $('tab-scanner').classList.toggle('active',scanner);
+ $('tab-wisdom').classList.toggle('active',!scanner);
+ $('tab-scanner').setAttribute('aria-pressed',String(scanner));
+ $('tab-wisdom').setAttribute('aria-pressed',String(!scanner));
+ if(!scanner)paintDaily();
+}
+$('tab-scanner').addEventListener('click',()=>switchTab('scanner'));
+$('tab-wisdom').addEventListener('click',()=>switchTab('wisdom'));
+$('scan-next-tip').addEventListener('click',()=>{
+ tipIndex=(tipIndex+1)%WISDOM.length;paintTip();
+});
+$('wisdom-next').addEventListener('click',()=>{
+ showingDailyIndex=(showingDailyIndex+1)%WISDOM.length;paintDaily();
+});
+$('wisdom-today').addEventListener('click',()=>{
+ showingDailyIndex=wisdomDayIndex();paintDaily();
+});
+function updateWisdomLoading(running,scanned=0,total=0){
+ $('scan-tip').hidden=!running;
+ $('scan-progress').hidden=!running;
+ const pct=total>0?Math.min(100,Math.round(scanned/total*100)):0;
+ $('scan-progress-bar').style.width=pct+'%';
+ if(running&&!tipTimer){
+   paintTip();
+   tipTimer=setInterval(()=>{
+      if(!document.hidden){
+        tipIndex=(tipIndex+1)%WISDOM.length;
+        paintTip();
+      }
+   },14000);
+ }else if(!running&&tipTimer){
+   clearInterval(tipTimer);tipTimer=null;
+ }
+}
+showingDailyIndex=wisdomDayIndex();
+tipIndex=wisdomDayIndex();
+paintDaily();
+paintTip();
+
 const $=id=>document.getElementById(id);
 const JOB_KEY="klarInvestActiveScanV2";
 const HISTORY_KEY="klarInvestSavedHistoryV1";
@@ -13,6 +95,7 @@ const MAX_HISTORY=8;
 let activeJob=null, activeOptions=null, pollingTimer=null, refreshBusy=false, networkFails=0, pausedEntry=null, requestedPause=false;
 const setStatus=message=>{$('status').textContent=message};
 const setRunning=running=>{
+  updateWisdomLoading(running);
   $('scan').disabled=running;
   $('scan').textContent=running?'⏳ SKANNAR PÅ SERVERN':'🔎 SKANNA AKTIER';
   updateControls();
@@ -106,6 +189,7 @@ function drawHistory(){
 function renderResults(s){
   const results=Array.isArray(s.results)?s.results:[];
   const errors=Array.isArray(s.error_examples)?s.error_examples:[];
+  if(activeJob && s.state==='running')updateWisdomLoading(true,s.processed||0,s.total||0);
   $('stats').textContent='Instrument: '+(s.total||0)+' | Kontrollerade: '+(s.checked||0)+
     ' | Bearbetade: '+(s.processed||0)+' | Datafel: '+(s.errors||0)+
     ' | Träffar: '+results.length;
