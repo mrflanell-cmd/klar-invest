@@ -16,6 +16,7 @@ class ScanOptions(BaseModel):
     min_price:float=10
     max_price:float=800
     commodity_group:str="all"
+    checkpoint:dict|None=None
 
 # Curated exchange-traded futures universe. Price quotation units differ by contract.
 COMMODITIES = [
@@ -196,37 +197,80 @@ def detect(bars,pattern,low,high):
 def do_scan(job_id,options):
     job=JOBS[job_id]
     try:
-        items,note=(commodity_universe(options.commodity_group) if options.market=="COM"
-                    else universe(options.market))
-        job["source_note"]=note
-        job["total"]=len(items)
+        if not job["items"]:
+            items,note=(commodity_universe(options.commodity_group) if options.market=="COM"
+                        else universe(options.market))
+            job["items"]=items
+            job["total"]=len(items)
+            job["source_note"]=note
+        already=set(job["completed_symbols"])
+        pending=[it for it in job["items"] if it["ticker"] not in already]
         def scan_one(item):
             try:
                 bars=history(item,options.market)
-                min_price=0 if options.market=="COM" else options.min_price
-                max_price=1e12 if options.market=="COM" else options.max_price
-                return item,detect(bars,options.pattern,min_price,max_price),None
-            except Exception as e:return item,None,str(e)[:100]
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            for f in as_completed([executor.submit(scan_one,item) for item in items]):
-                item,match,error=f.result()
-                job["processed"]+=1
-                if error:
-                    job["errors"]+=1
-                    if len(job["error_examples"])<12:job["error_examples"].append(item["ticker"]+": "+error)
-                else:
-                    job["checked"]+=1
-                    if match:
-                        match.update({"name":item["name"],"ticker":item["ticker"],
-                            "currency":"SEK" if options.market=="SE" else "USD",
-                            "quote_unit":item.get("quote_unit","SEK" if options.market=="SE" else "USD"),
-                            "tv":"https://www.tradingview.com/chart/?symbol="+
-                            requests.utils.quote(item.get("tv_symbol",
-                                ("OMXSTO:" if options.market=="SE" else "NASDAQ:")+item["ticker"]),safe="")+"&interval=D"})
-                        job["results"].append(match)
-        job["state"]="done"
-    except Exception as e:
-        job["state"]="error";job["message"]=str(e)
+                lo=0 if options.market=="COM" else options.min_price
+                hi=1e12 if options.market=="COM" else options.max_price
+                return item,detect(bars,options.pattern,lo,hi),None
+            except Exception as exc:
+                return item,None,str(exc)[:100]
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            for start in range(0,len(pending),5):
+                if job["pause_requested"]:
+                    job["state"]="paused"
+                    break
+                batch=pending[start:start+5]
+                for f in as_completed([pool.submit(scan_one,item) for item in batch]):
+                    item,match,error=f.result()
+                    ticker=item["ticker"]
+                    if ticker in already:continue
+                    already.add(ticker)
+                    job["completed_symbols"].append(ticker)
+                    job["processed"]+=1
+                    if error:
+                        job["errors"]+=1
+                        if len(job["error_examples"])<12:
+                            job["error_examples"].append(ticker+": "+error)
+                    else:
+                        job["checked"]+=1
+                        if match:
+                            match.update({"name":item["name"],"ticker":ticker,
+                                "currency":"SEK" if options.market=="SE" else "USD",
+                                "quote_unit":item.get("quote_unit","SEK" if options.market=="SE" else "USD"),
+                                "tv":"https://www.tradingview.com/chart/?symbol="+
+                                requests.utils.quote(item.get("tv_symbol",
+                                    ("OMXSTO:" if options.market=="SE" else "NASDAQ:")+ticker),safe="")+"&interval=D"})
+                            job["results"].append(match)
+            else:
+                job["state"]="done"
+        if job["pause_requested"] and job["state"]!="done":
+            job["state"]="paused"
+    except Exception as exc:
+        job["state"]="error"
+        job["message"]=str(exc)
+
+def new_job(options):
+    cp=options.checkpoint if isinstance(options.checkpoint,dict) else {}
+    items=cp.get("items",[])
+    if not isinstance(items,list) or len(items)>15000:items=[]
+    items=[{k:v for k,v in item.items() if k in ("ticker","symbol","name","quote_unit","tv_symbol","group")}
+           for item in items if isinstance(item,dict) and isinstance(item.get("ticker"),str)
+           and isinstance(item.get("symbol"),str) and len(item.get("symbol",""))<45]
+    completed=cp.get("completed_symbols",[])
+    known={item["ticker"] for item in items}
+    completed=list(dict.fromkeys(x for x in completed if isinstance(x,str) and x in known)) if isinstance(completed,list) else []
+    errors=max(0,min(len(completed),int(cp.get("errors",0) or 0)))
+    results=cp.get("results",[])
+    results=[r for r in results if isinstance(r,dict) and r.get("ticker") in known] if isinstance(results,list) else []
+    examples=cp.get("error_examples",[])
+    examples=[str(x)[:110] for x in examples[:12]] if isinstance(examples,list) else []
+    job=str(uuid.uuid4())
+    JOBS[job]={"state":"running","pause_requested":False,"total":len(items),
+        "items":items,"completed_symbols":completed,"processed":len(completed),
+        "checked":len(completed)-errors,"errors":errors,"error_examples":examples,
+        "results":results,"message":"","source_note":str(cp.get("source_note",""))[:500],
+        "options":options.model_dump(exclude={"checkpoint"})}
+    threading.Thread(target=do_scan,args=(job,options),daemon=True).start()
+    return job
 
 @app.get("/",response_class=HTMLResponse)
 def root():
@@ -236,11 +280,27 @@ def root():
 def start(o:ScanOptions):
     if o.market not in ("SE","US","COM") or o.pattern not in ("piercing","engulfing","hammer"):
         return {"error":"Okända filter"}
-    job=str(uuid.uuid4())
-    JOBS[job]={"state":"running","total":0,"processed":0,"checked":0,"errors":0,"error_examples":[],"results":[],"message":"","source_note":""}
-    threading.Thread(target=do_scan,args=(job,o),daemon=True).start()
-    return {"job":job}
+    return {"job":new_job(o)}
+
+@app.post("/api/scan/{job}/pause")
+def pause(job:str):
+    entry=JOBS.get(job)
+    if entry is None:return {"state":"missing"}
+    if entry["state"]=="running":
+        entry["pause_requested"]=True
+    return {"state":entry["state"],"pause_requested":entry["pause_requested"]}
+
+@app.post("/api/scan/{job}/resume")
+def resume(job:str):
+    entry=JOBS.get(job)
+    if entry is None:return {"state":"missing"}
+    if entry["state"]=="paused":
+        entry["pause_requested"]=False
+        entry["state"]="running"
+        o=ScanOptions(**entry["options"])
+        threading.Thread(target=do_scan,args=(job,o),daemon=True).start()
+    return {"state":entry["state"]}
 
 @app.get("/api/scan/{job}")
 def progress(job:str):
-    return JOBS.get(job,{"state":"error","message":"Skanningen hittades inte"})
+    return JOBS.get(job,{"state":"missing","message":"Sökningen finns inte på servern"})
