@@ -104,14 +104,14 @@ function renderResults(s){
     pre.textContent=errors.join('\n');d.append(sum,pre);holder.append(d);
   }
 }
-function showSaved(entry){
+function showSaved(entry,scroll=true){
   if(!entry||!entry.data)return;
   renderResults(entry.data);
   setStatus('📚 Sparad sökning '+formatTime(entry.updated)+' – '+optionsLabel(entry.options)+
     '. Resultatet är historiskt, inte en ny skanning.'+
     (entry.data.state==='done'?'':' OBS: detta är ett delresultat eller en avbruten sökning.'));
   const resultsSection=$('results').closest('section');
-  if(resultsSection)resultsSection.scrollIntoView({behavior:'smooth',block:'start'});
+  if(scroll&&resultsSection)resultsSection.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function schedule(delay=2300){
   if(pollingTimer!==null)clearTimeout(pollingTimer);
@@ -182,7 +182,7 @@ window.addEventListener('pageshow',()=>{if(activeJob)schedule(100)});
 window.addEventListener('online',()=>{if(activeJob)schedule(100)});
 drawHistory();
 const mostRecent=historyEntries()[0];
-if(mostRecent&&mostRecent.data)showSaved(mostRecent);
+if(mostRecent&&mostRecent.data)showSaved(mostRecent,false);
 const savedJob=storageRead(JOB_KEY,null);
 if(savedJob){
   activeJob=typeof savedJob==='string'?savedJob:savedJob.id;
