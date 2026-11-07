@@ -189,7 +189,7 @@ def universe(market):
 
 def history(item,market):
     url="https://query1.finance.yahoo.com/v8/finance/chart/"+requests.utils.quote(item["symbol"],safe="")
-    r=requests.get(url,params={"range":"1y" if item.get("nova") else "3mo","interval":"1d"},headers={"User-Agent":"Mozilla/5.0"},timeout=12)
+    r=requests.get(url,params={"range":"1y" if item.get("nova") or item.get("legend") else "3mo","interval":"1d"},headers={"User-Agent":"Mozilla/5.0"},timeout=12)
     r.raise_for_status()
     result=r.json().get("chart",{}).get("result") or []
     if not result:raise ValueError("Inga kursdata")
@@ -223,6 +223,32 @@ def detect(bars,pattern,low,high):
     if not low<=b["close"]<=high:return None
     def pierce(x,y):
         return x["close"]<x["open"] and y["close"]>y["open"] and y["open"]<x["close"] and y["close"]>x["close"] and y["close"]<x["open"]
+    if pattern in ("legend_turtle","legend_livermore","legend_raschke"):
+        # Educational mechanical adaptations, not authenticated historical trading rules.
+        if pattern=="legend_turtle":
+            # Turtle-inspired 55-session high breakout, ATR(20) initial stop 2N.
+            if len(bars)<57:return None
+            prev=bars[-56:-1]
+            breakout=max(x["high"] for x in prev)
+            tr=[max(bars[i]["high"]-bars[i]["low"],abs(bars[i]["high"]-bars[i-1]["close"]),abs(bars[i]["low"]-bars[i-1]["close"])) for i in range(len(bars)-20,len(bars))]
+            atr=sum(tr)/len(tr)
+            if not (c["close"]>breakout and c["close"]>c["open"] and atr>0):return None
+            entry=c["close"];stop=entry-2*atr
+        elif pattern=="legend_livermore":
+            # Livermore-inspired pivot breakout: 20-session high + SMA50 trend.
+            if len(bars)<51:return None
+            resistance=max(x["high"] for x in bars[-21:-1])
+            sma50=sum(x["close"] for x in bars[-50:])/50
+            if not (c["close"]>resistance and c["close"]>sma50 and c["close"]>c["open"]):return None
+            entry=c["close"];stop=min(x["low"] for x in bars[-3:])
+        else:
+            # Raschke-inspired false breakdown (2B-style reversal) on daily candles.
+            if len(bars)<23:return None
+            prior_low=min(x["low"] for x in bars[-22:-2])
+            if not (b["low"]<prior_low and b["close"]>prior_low and c["close"]>b["high"]):return None
+            entry=c["close"];stop=b["low"]
+        if stop<=0 or entry<=stop:return None
+        return {"status":"BEKRÄFTAD","date":c["date"],"stop":round(stop,4),"strategy":pattern,"sma200":None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
     if pattern=="hidden_gate":
         # KLAR INVEST prototype, NOT Flux Charts CRT/FVG/OB implementation.
         # Reference candle a; candle b sweeps its low and reclaims the range;
