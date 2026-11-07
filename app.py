@@ -379,6 +379,10 @@ def new_job(options):
 def root():
     return Path("index.html").read_text(encoding="utf-8")
 
+@app.get("/community", response_class=HTMLResponse)
+def community_page():
+    return Path("community.html").read_text(encoding="utf-8")
+
 @app.get("/avanza", response_class=HTMLResponse)
 def avanza_dashboard():
     return Path("avanza.html").read_text(encoding="utf-8")
