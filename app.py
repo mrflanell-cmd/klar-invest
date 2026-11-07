@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 from pathlib import Path
 import requests
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
 
 app=FastAPI(title="KLAR INVEST")
@@ -275,6 +275,15 @@ def new_job(options):
 @app.get("/",response_class=HTMLResponse)
 def root():
     return Path("index.html").read_text(encoding="utf-8")
+
+@app.get("/avanza", response_class=HTMLResponse)
+def avanza_dashboard():
+    return Path("avanza.html").read_text(encoding="utf-8")
+
+@app.get("/avanza.js")
+def avanza_js():
+    return FileResponse("avanza.js",media_type="application/javascript",headers={"Cache-Control":"no-store"})
+
 
 @app.post("/api/scan")
 def start(o:ScanOptions):
