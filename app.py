@@ -189,7 +189,7 @@ def universe(market):
 
 def history(item,market):
     url="https://query1.finance.yahoo.com/v8/finance/chart/"+requests.utils.quote(item["symbol"],safe="")
-    r=requests.get(url,params={"range":"3mo","interval":"1d"},headers={"User-Agent":"Mozilla/5.0"},timeout=12)
+    r=requests.get(url,params={"range":"1y" if item.get("nova") else "3mo","interval":"1d"},headers={"User-Agent":"Mozilla/5.0"},timeout=12)
     r.raise_for_status()
     result=r.json().get("chart",{}).get("result") or []
     if not result:raise ValueError("Inga kursdata")
@@ -223,7 +223,22 @@ def detect(bars,pattern,low,high):
     if not low<=b["close"]<=high:return None
     def pierce(x,y):
         return x["close"]<x["open"] and y["close"]>y["open"] and y["open"]<x["close"] and y["close"]>x["close"] and y["close"]<x["open"]
-    if pattern=="piercing":
+    if pattern=="nova":
+        # NOVA v1.0: a fixed, experimental 3-candle reversal with SMA200 filter.
+        if len(bars)<203:return None
+        sma200=sum(x["close"] for x in bars[-200:])/200
+        if c["close"]<=sma200:return None
+        ar=a["high"]-a["low"];br=b["high"]-b["low"]
+        if ar<=0 or br<=0:return None
+        red=a["close"]<a["open"] and (a["open"]-a["close"])/ar>=0.50
+        pause=abs(b["close"]-b["open"])/br<=0.35
+        confirm=c["close"]>c["open"] and c["close"]>(a["open"]+a["close"])/2 and c["close"]>b["high"]
+        if not (red and pause and confirm):return None
+        entry=c["close"]
+        stop=min(a["low"],b["low"],c["low"])
+        if entry<=stop:return None
+        status="BEKRÄFTAD"
+    elif pattern=="piercing":
         confirmed=pierce(a,b) and c["close"]>c["open"] and c["close"]>a["open"]
         waiting=pierce(b,c)
         if not confirmed and not waiting:return None
@@ -237,7 +252,7 @@ def detect(bars,pattern,low,high):
         if not(body>0 and min(c["open"],c["close"])-c["low"]>=2*body and c["high"]-max(c["open"],c["close"])<=body):return None
         status="MÖNSTERTRÄFF";entry=c["open"]
     else:return None
-    return {"status":status,"date":c["date"],"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
+    return {"status":status,"date":c["date"],"stop":round(stop,4) if pattern=="nova" else round(b["low"],4),"strategy":pattern,"sma200":round(sma200,4) if pattern=="nova" else None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
 
 def do_scan(job_id,options):
     job=JOBS[job_id]
@@ -252,7 +267,7 @@ def do_scan(job_id,options):
         pending=[it for it in job["items"] if it["ticker"] not in already]
         def scan_one(item):
             try:
-                bars=history(item,options.market)
+                bars=history({**item,"nova":options.pattern=="nova"},options.market)
                 lo=0 if options.market=="COM" else options.min_price
                 hi=1e12 if options.market=="COM" else options.max_price
                 return item,detect(bars,options.pattern,lo,hi),None
@@ -332,7 +347,7 @@ def avanza_js():
 
 @app.post("/api/scan")
 def start(o:ScanOptions):
-    if o.market not in ("SE","US","COM") or o.pattern not in ("piercing","engulfing","hammer"):
+    if o.market not in ("SE","US","COM") or o.pattern not in ("piercing","engulfing","hammer","nova"):
         return {"error":"Okända filter"}
     return {"job":new_job(o)}
 
