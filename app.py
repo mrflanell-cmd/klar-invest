@@ -223,7 +223,16 @@ def detect(bars,pattern,low,high):
     if not low<=b["close"]<=high:return None
     def pierce(x,y):
         return x["close"]<x["open"] and y["close"]>y["open"] and y["open"]<x["close"] and y["close"]>x["close"] and y["close"]<x["open"]
-    if pattern=="nova":
+    if pattern=="hidden_gate":
+        # KLAR INVEST prototype, NOT Flux Charts CRT/FVG/OB implementation.
+        # Reference candle a; candle b sweeps its low and reclaims the range;
+        # candle c closes above b high. Entry is next-session limit at c close.
+        if not (b["low"]<a["low"] and b["close"]>a["low"] and c["close"]>b["high"]):return None
+        entry=c["close"]
+        stop=b["low"]
+        if entry<=stop:return None
+        status="BEKRÄFTAD"
+    elif pattern=="nova":
         # NOVA v1.0: a fixed, experimental 3-candle reversal with SMA200 filter.
         if len(bars)<203:return None
         sma200=sum(x["close"] for x in bars[-200:])/200
@@ -252,7 +261,7 @@ def detect(bars,pattern,low,high):
         if not(body>0 and min(c["open"],c["close"])-c["low"]>=2*body and c["high"]-max(c["open"],c["close"])<=body):return None
         status="MÖNSTERTRÄFF";entry=c["open"]
     else:return None
-    return {"status":status,"date":c["date"],"stop":round(stop,4) if pattern=="nova" else round(b["low"],4),"strategy":pattern,"sma200":round(sma200,4) if pattern=="nova" else None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
+    return {"status":status,"date":c["date"],"stop":round(stop,4) if pattern in ("nova","hidden_gate") else round(b["low"],4),"strategy":pattern,"sma200":round(sma200,4) if pattern=="nova" else None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
 
 def do_scan(job_id,options):
     job=JOBS[job_id]
@@ -347,7 +356,7 @@ def avanza_js():
 
 @app.post("/api/scan")
 def start(o:ScanOptions):
-    if o.market not in ("SE","US","COM") or o.pattern not in ("piercing","engulfing","hammer","nova"):
+    if o.market not in ("SE","US","COM") or o.pattern not in ("piercing","engulfing","hammer","nova","hidden_gate"):
         return {"error":"Okända filter"}
     return {"job":new_job(o)}
 
