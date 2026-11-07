@@ -223,7 +223,7 @@ def detect(bars,pattern,low,high):
     if not low<=b["close"]<=high:return None
     def pierce(x,y):
         return x["close"]<x["open"] and y["close"]>y["open"] and y["open"]<x["close"] and y["close"]>x["close"] and y["close"]<x["open"]
-    if pattern in ("legend_turtle","legend_livermore","legend_raschke"):
+    if pattern in ("legend_turtle","legend_livermore","legend_raschke","legend_oneil"):
         # Educational mechanical adaptations, not authenticated historical trading rules.
         if pattern=="legend_turtle":
             # Turtle-inspired 55-session high breakout, ATR(20) initial stop 2N.
@@ -241,6 +241,14 @@ def detect(bars,pattern,low,high):
             sma50=sum(x["close"] for x in bars[-50:])/50
             if not (c["close"]>resistance and c["close"]>sma50 and c["close"]>c["open"]):return None
             entry=c["close"];stop=min(x["low"] for x in bars[-3:])
+        elif pattern=="legend_oneil":
+            # Price-only O'Neil-inspired breakout. Does not check CAN SLIM fundamentals.
+            if len(bars)<202:return None
+            resistance=max(x["high"] for x in bars[-51:-1])
+            sma50=sum(x["close"] for x in bars[-50:])/50
+            sma200=sum(x["close"] for x in bars[-200:])/200
+            if not (c["close"]>resistance and c["close"]>sma50>sma200 and c["close"]>c["open"]):return None
+            entry=c["close"];stop=min(x["low"] for x in bars[-10:])
         else:
             # Raschke-inspired false breakdown (2B-style reversal) on daily candles.
             if len(bars)<23:return None
