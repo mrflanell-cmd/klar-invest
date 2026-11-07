@@ -354,6 +354,33 @@ def avanza_js():
     return FileResponse("avanza.js",media_type="application/javascript",headers={"Cache-Control":"no-store"})
 
 
+
+@app.get("/api/avanza-stock")
+def avanza_stock(ticker:str, name:str=""):
+    """Resolve only an exact stock ticker; never guess an Avanza instrument."""
+    symbol=re.sub(r"\\.ST$","",ticker.strip(),flags=re.I).upper().replace(".","-")
+    if not symbol or len(symbol)>24 or not re.fullmatch(r"[A-Z0-9-]+",symbol):
+        return {"url":None,"reason":"Ogiltig ticker"}
+    try:
+        response=requests.post("https://www.avanza.se/_api/search/filtered-search",
+            json={"query":symbol,"searchFilter":{"types":["STOCK"]},"pagination":{"from":0,"size":30}},
+            headers={"User-Agent":"Mozilla/5.0","Accept":"application/json"},timeout=8)
+        response.raise_for_status()
+        payload=response.json()
+        hits=payload.get("hits",[]) if isinstance(payload,dict) else []
+        matches=[]
+        for item in hits:
+            if not isinstance(item,dict):continue
+            candidate=str(item.get("tickerSymbol") or item.get("symbol") or item.get("description") or "").upper().replace(" ","-").replace(".","-")
+            path=item.get("path")
+            if candidate==symbol and isinstance(path,str) and path.startswith("/") and not path.startswith("//"):
+                matches.append("https://www.avanza.se"+path)
+        matches=list(dict.fromkeys(matches))
+        if len(matches)==1:return {"url":matches[0],"ticker":symbol}
+    except (requests.RequestException,ValueError,TypeError):
+        pass
+    return {"url":None,"reason":"Ingen entydig verifierad Avanza-träff"}
+
 @app.post("/api/scan")
 def start(o:ScanOptions):
     if o.market not in ("SE","US","COM") or o.pattern not in ("piercing","engulfing","hammer","nova","hidden_gate"):
