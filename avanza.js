@@ -182,6 +182,182 @@ function renderPlot(trades,unit){
  $('line-caption').textContent='Från '+sorted[0].date+' till '+sorted.at(-1).date+
   ' · Slutvärde '+fmtSigned(sum,unit)+' · Endast realiserade, matchade avslut.';
 }
+
+// Extra insights: all metrics depend on matched sales from the currently selected period.
+let calendarOffset=0,calendarTrades=[],calendarUnit='SEK';
+function simpleCard(label,value,note,cls=''){return metric(label,value,note,cls)}
+function calcStreak(records){
+ const recordsSorted=[...records].sort((a,b)=>a.date.localeCompare(b.date));
+ let wins=0,losses=0,bestWin=0,bestLoss=0;
+ for(const r of recordsSorted){
+  if(r.pnl>0){wins++;losses=0}else if(r.pnl<0){losses++;wins=0}else{wins=0;losses=0}
+  bestWin=Math.max(bestWin,wins);bestLoss=Math.max(bestLoss,losses);
+ }
+ return {win:bestWin,loss:bestLoss};
+}
+function drawdownFromTrades(records){
+ const sorted=[...records].sort((a,b)=>a.date.localeCompare(b.date));
+ let equity=0,peak=0,worst=0,underwater=0,maxDays=0,lastPeakDate=null;
+ for(const r of sorted){
+  equity+=r.pnl;
+  if(equity>=peak){peak=equity;underwater=0;lastPeakDate=r.date}
+  else{
+   worst=Math.max(worst,peak-equity);
+   underwater++;
+   maxDays=Math.max(maxDays,underwater);
+  }
+ }
+ return {max:worst,underwaterTrades:maxDays}; // drawdown measured in currency units, not % of capital.
+}
+function renderAdvanced(trades,unit,mixed){
+ const host=$('advanced-metrics');host.replaceChildren();
+ const win=trades.filter(t=>t.pnl>0),lose=trades.filter(t=>t.pnl<0);
+ const total=trades.reduce((s,t)=>s+t.pnl,0);
+ const grossW=win.reduce((s,t)=>s+t.pnl,0);
+ const grossL=Math.abs(lose.reduce((s,t)=>s+t.pnl,0));
+ const totalRisk=trades.reduce((s,t)=>s+t.cost,0);
+ const ratio=lose.length&&win.length?(grossW/win.length)/(grossL/lose.length):null;
+ const streak=calcStreak(trades),dd=drawdownFromTrades(trades);
+ const sorted=[...trades].sort((a,b)=>b.pnl-a.pnl);
+ const largest=sorted[0]?.pnl||0;
+ const bottom=sorted.at(-1)?.pnl||0;
+ const mid=sorted.map(x=>x.pnl).sort((a,b)=>a-b);
+ const median=mid.length?mid.length%2?mid[(mid.length-1)/2]:(mid[mid.length/2-1]+mid[mid.length/2])/2:null;
+ const profitable=trades.length?win.length/trades.length:0;
+ const currencyText=mixed?'Flera valutor':unit;
+ const countSymbols=new Set(trades.map(t=>t.name)).size;
+ const distinctDays=new Set(trades.map(t=>t.date)).size;
+ const fields=[
+ ['Förväntat snitt/avslut',mixed||!trades.length?'–':fmtSigned(total/trades.length,unit),'Historiskt medelvärde per matchad försäljning'],
+ ['Medianavslut',mixed||median===null?'–':fmtSigned(median,unit),'Mittenvärdet, mindre känsligt för extrema affärer'],
+ ['Största nedgång från vinsttopp',mixed?'–':money(dd.max,unit),'Max drawdown i realiserat ackumulerat resultat – ej portföljens %'],
+ ['Vinstsvit',streak.win+' avslut','Längsta följden av positiva matchade försäljningar'],
+ ['Förlustsvit',streak.loss+' avslut','Längsta följden av negativa matchade försäljningar'],
+ ['Snittvinst / |snittförlust|',ratio===null||mixed?'–':ratio.toFixed(2)+'×','Hur stor en genomsnittsvinst är mot genomsnittsförlust'],
+ ['Realiserat / matchad kostnad',!totalRisk||mixed?'–':(total/totalRisk*100).toFixed(2)+' %','Inte kontots avkastning; försäljningar med känd FIFO-kostnad'],
+ ['Vinstgivande affärsrader',trades.length?(profitable*100).toFixed(1)+' %':'–','Andel matchade försäljningar med plus'],
+ ['Bruttovinster',mixed?'–':money(grossW,unit),'Summan av positiva avslut'],
+ ['Bruttoförluster',mixed?'–':money(-grossL,unit),'Summan av negativa avslut'],
+ ['Antal olika aktier',String(countSymbols),'Unika namn i matchade försäljningar'],
+ ['Aktiva avslutsdagar',String(distinctDays),'Datum med minst ett matchat avslut']
+ ];
+ for(let i=0;i<fields.length;i++){const [label,value,note]=fields[i];host.append(simpleCard(label,value,note,i===8?'green':i===9?'red':''))}
+ $('advanced-note').textContent='Drawdown och sviter bygger på avslutens datum, inte intradagshandel eller öppna positioners värdeförändring. Vid blandade valutor visas inte summerade penningbelopp.';
+ const hero=$('hero-message');
+ hero.textContent=mixed?'Flera valutor upptäckta – vi håller dem åtskilda för korrekta slutsatser.':
+  !trades.length?'Ingen matchad försäljning i den valda perioden.':
+  total>=0?'Din matchade tradinghistorik visar ett positivt realiserat resultat under vald period.':
+  'Din matchade tradinghistorik visar ett negativt realiserat resultat under vald period.';
+ $('hero-trades').textContent=trades.length+' matchade avslut';
+ $('hero-days').textContent=distinctDays+' avslutsdagar';
+ $('hero-win').textContent=win.length+' vinster · '+lose.length+' förluster';
+}
+function renderDistribution(trades,mixed){
+ const host=$('distribution');host.replaceChildren();
+ const buckets=[
+  {label:'Stora vinster (+500 eller mer)',predicate:v=>v>=500},
+  {label:'Vinster +100 till +499',predicate:v=>v>=100&&v<500},
+  {label:'Vinster 0 till +99',predicate:v=>v>0&&v<100},
+  {label:'Nollresultat',predicate:v=>v===0},
+  {label:'Förluster −1 till −99',predicate:v=>v<0&&v>-100},
+  {label:'Förluster −100 till −499',predicate:v=>v<=-100&&v>-500},
+  {label:'Stora förluster (−500 eller mer)',predicate:v=>v<=-500}
+ ];
+ if(mixed){
+  host.textContent='Välj en enda redovisningsvaluta för beloppsfördelningen.';
+  return;
+ }
+ for(const b of buckets){
+  const count=trades.filter(t=>b.predicate(t.pnl)).length;
+  const box=document.createElement('div');box.className='dist-item';
+  const val=document.createElement('div');val.className='dist-num';val.textContent=count;
+  const label=document.createElement('div');label.className='dist-label';
+  label.textContent=b.label+(trades.length?' · '+(100*count/trades.length).toFixed(1)+' %':'');
+  box.append(val,label);host.append(box);
+ }
+}
+function renderLeaders(trades,unit,mixed){
+ for(const [target,descending] of [['top-wins',true],['top-losses',false]]){
+  const holder=$(target);holder.replaceChildren();
+  if(mixed){holder.textContent='Blandade valutor: filtrera till en valuta för jämförbara belopp.';continue}
+  const pool=trades.filter(t=>descending?t.pnl>0:t.pnl<0);
+  const sorted=[...pool].sort((a,b)=>descending?b.pnl-a.pnl:a.pnl-b.pnl).slice(0,10);
+  if(!sorted.length){holder.textContent='Inga sådana avslut i perioden.';continue}
+  for(const t of sorted){
+   const row=document.createElement('div');row.className='leader-item';
+   const left=document.createElement('span');
+   left.textContent=t.name+' · '+t.date;
+   const right=document.createElement('b');
+   right.textContent=fmtSigned(t.pnl,unit);
+   right.style.color=descending?'#45e4ae':'#ff9ca4';
+   row.append(left,right);holder.append(row);
+  }
+ }
+}
+function renderBonus(trades,events,unit,mixed){
+ const host=$('bonus-metrics');host.replaceChildren();
+ const days=grouped(trades,t=>t.date,t=>t.pnl);
+ const bestDay=!mixed&&days.length?[...days].sort((a,b)=>b.value-a.value)[0]:null;
+ const worstDay=!mixed&&days.length?[...days].sort((a,b)=>a.value-b.value)[0]:null;
+ const weekdays=['sön','mån','tis','ons','tor','fre','lör'];
+ const dateDay=d=>weekdays[new Date(d+'T12:00:00Z').getUTCDay()];
+ const byDay=grouped(trades,t=>dateDay(t.date),()=>1).sort((a,b)=>b.value-a.value);
+ const biggestCount=byDay[0];
+ const highestQty=trades.length?Math.max(...trades.map(t=>t.qty)):0;
+ const names=new Map();
+ for(const t of trades)names.set(t.name,(names.get(t.name)||0)+1);
+ const mostFrequent=[...names].sort((a,b)=>b[1]-a[1])[0];
+ const first=trades.length?[...trades].sort((a,b)=>a.date.localeCompare(b.date))[0]:null;
+ const last=trades.length?[...trades].sort((a,b)=>b.date.localeCompare(a.date))[0]:null;
+ const values=[
+  ['Bästa dagen',bestDay?fmtSigned(bestDay.value,unit):'–',bestDay?.label||''],
+  ['Tyngsta dagen',worstDay?fmtSigned(worstDay.value,unit):'–',worstDay?.label||''],
+  ['Flest avslut på veckodag',biggestCount?biggestCount.label:'–',biggestCount?biggestCount.value+' stycken':''],
+  ['Mest handlad aktie',mostFrequent?.[0]||'–',mostFrequent?mostFrequent[1]+' matchade säljrader':''],
+  ['Största matchade antal',highestQty.toLocaleString('sv-SE'),'Aktier/andelar i en försäljning'],
+  ['Första matchade avslut',first?.date||'–','I vald period'],
+  ['Senaste matchade avslut',last?.date||'–','I vald period'],
+  ['Handelsintensitet',days.length?(trades.length/days.length).toFixed(1):'–','Matchade avslut per aktiv avslutsdag']
+ ];
+ for(const [label,value,note] of values)host.append(simpleCard(label,value,note));
+}
+function initCalendar(){
+ $('cal-prev').addEventListener('click',()=>{calendarOffset--;paintCalendar()});
+ $('cal-next').addEventListener('click',()=>{calendarOffset++;paintCalendar()});
+}
+function paintCalendar(){
+ const host=$('heatmap');host.replaceChildren();
+ const today=new Date();
+ const anchor=new Date(Date.UTC(today.getFullYear(),today.getMonth()+calendarOffset,1));
+ const yr=anchor.getUTCFullYear(),mo=anchor.getUTCMonth();
+ $('cal-month').textContent=new Intl.DateTimeFormat('sv-SE',{month:'long',year:'numeric',timeZone:'UTC'}).format(anchor);
+ const weekdayNames=['M','T','O','T','F','L','S'];
+ for(const n of weekdayNames){const h=document.createElement('div');h.className='heat-head';h.textContent=n;host.append(h)}
+ const firstWeekday=(anchor.getUTCDay()+6)%7;
+ for(let i=0;i<firstWeekday;i++){const empty=document.createElement('div');empty.className='heat-day out';host.append(empty)}
+ const daysInMonth=new Date(Date.UTC(yr,mo+1,0)).getUTCDate();
+ const key=d=>yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+ const groupedDays=new Map();
+ for(const t of calendarTrades){
+  const r=groupedDays.get(t.date)||{pnl:0,count:0};
+  r.pnl+=t.pnl;r.count++;
+  groupedDays.set(t.date,r);
+ }
+ const amounts=[...groupedDays.values()].map(v=>Math.abs(v.pnl)).sort((a,b)=>a-b);
+ const threshold=amounts[Math.floor(amounts.length*.7)]||1;
+ for(let day=1;day<=daysInMonth;day++){
+  const date=key(day),result=groupedDays.get(date);
+  const btn=document.createElement('button');btn.type='button';btn.textContent=day;
+  btn.className='heat-day '+(!result?'none':result.pnl>=0?(result.pnl>threshold?'bigwin':'win'):(Math.abs(result.pnl)>threshold?'bigloss':'loss'));
+  btn.style.margin='0';btn.style.width='100%';btn.style.padding='0';
+  btn.setAttribute('aria-label',date+(result?' '+money(result.pnl,calendarUnit):' inga matchade avslut'));
+  btn.addEventListener('click',()=>{
+   $('cal-details').textContent=result?date+': '+fmtSigned(result.pnl,calendarUnit)+' · '+result.count+' matchade avslut.':
+     date+': Inga matchade avslut i importerad data.';
+  });host.append(btn);
+ }
+}
+initCalendar();
 function render(){
  if(!allRows.length)return;
  const account=$('account').value,period=$('period').value;
@@ -201,6 +377,11 @@ function render(){
  const profitFactor=losses.length&&sum(losses)<0?sum(wins)/Math.abs(sum(losses)):null;
  const averageWin=wins.length?sum(wins)/wins.length:null;
  const averageLoss=losses.length?sum(losses)/losses.length:null;
+ renderAdvanced(trades,unit,currencyMix);
+ renderDistribution(trades,currencyMix);
+ renderLeaders(trades,unit,currencyMix);
+ renderBonus(trades,events,unit,currencyMix);
+ calendarTrades=currencyMix?[]:trades;calendarUnit=unit;calendarOffset=0;paintCalendar();
  const metrics=$('metrics');metrics.replaceChildren();
  metrics.append(metric('Realiserat resultat',pnl===null?'Flera valutor':fmtSigned(pnl,unit),'Köp/sälj som kunnat matchas',pnl>0?'green':pnl<0?'red':''),
  metric('Vinstträffar',trades.length?(wins.length/trades.length*100).toFixed(1)+' %':'–',wins.length+' vinster · '+losses.length+' förluster · '+flat.length+' noll'),
