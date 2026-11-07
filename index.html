@@ -387,21 +387,20 @@ function renderResults(s){
       const a=document.createElement('a');a.href=x.tv;a.target='_blank';a.rel='noopener';a.textContent='📈 TradingView – aktiens diagram';links.append(a);
     }
     if(unit==='SEK' && x.ticker){
-      // A direct Avanza stock URL needs Avanza's instrument ID. Never guess one.
-      const avanzaKnown={
-        'VOLV-B':'https://www.avanza.se/aktier/om-aktien.html/5269/volvo-b',
-        'ERIC-B':'https://www.avanza.se/aktier/om-aktien.html/5240/ericsson-b',
-        'SWED-A':'https://www.avanza.se/aktier/om-aktien.html/5241/swedbank-a',
-        'AXFO':'https://www.avanza.se/aktier/om-aktien.html/5465/axfood'
-      };
-      const ticker=String(x.ticker).replace(/\\.ST$/i,'').toUpperCase();
-      const direct=avanzaKnown[ticker];
-      const av=document.createElement('a');
-      av.href=direct||'https://www.avanza.se/sok.html?query='+encodeURIComponent(x.name||x.ticker);
-      av.target='_blank';av.rel='noopener';
-      av.textContent=direct?'📊 Avanza – aktiens sida':'🔎 Avanza – hitta rätt aktie';
-      links.append(av);
-      if(!direct){const info=document.createElement('small');info.textContent='Direktlänk saknas: välj rätt aktieslag i Avanzas sökresultat.';links.append(info);}
+      const av=document.createElement('a');av.textContent='⏳ Hittar aktiens direktsida på Avanza…';
+      av.setAttribute('aria-busy','true');links.append(av);
+      fetch('/api/avanza-stock?ticker='+encodeURIComponent(x.ticker)+'&name='+encodeURIComponent(x.name||''))
+        .then(r=>{if(!r.ok)throw Error('Avanza');return r.json()})
+        .then(result=>{
+          av.removeAttribute('aria-busy');
+          if(result.url && /^https:\/\/www\\.avanza\\.se\//.test(result.url)){
+            av.href=result.url;av.target='_blank';av.rel='noopener';
+            av.textContent='🛒 Öppna aktien på Avanza – KÖP';
+          }else{
+            av.textContent='⚠️ Avanza-direktlänk kunde inte verifieras';
+            const note=document.createElement('small');note.textContent='Ingen säker matchning för '+x.ticker+'. Vi länkar inte till fel aktie.';links.append(note);
+          }
+        }).catch(()=>{av.removeAttribute('aria-busy');av.textContent='⚠️ Avanza är tillfälligt otillgängligt';});
     }
     div.append(links);
     if(x.strategy==='hidden_gate'){const note=document.createElement('p');note.className='note';note.textContent='CRT-inspirerad prototyp, inte verifierad Flux Charts FVG/OB. Granska signal och prisnivåer före handel.';div.append(note);}
