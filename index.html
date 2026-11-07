@@ -432,21 +432,33 @@ function renderResults(s){
       const a=document.createElement('a');a.href=x.tv;a.target='_blank';a.rel='noopener';a.textContent='📈 TradingView';links.append(a);
     }
     if(unit==='SEK' && x.ticker){
-      const av=document.createElement('a');av.textContent='⏳ Avanza – söker direktlänk';
-      av.setAttribute('aria-busy','true');links.append(av);
-      fetch('/api/avanza-stock?ticker='+encodeURIComponent(x.ticker)+'&name='+encodeURIComponent(x.name||''),{signal:AbortSignal.timeout(9000)})
-        .then(r=>{if(!r.ok)throw Error('Avanza');return r.json()})
-        .then(result=>{
-          av.removeAttribute('aria-busy');
-          if(result.url && /^https:\/\/www\\.avanza\\.se\//.test(result.url)){
-            av.href=result.url;av.target='_blank';av.rel='noopener';
-            av.textContent='🛒 Avanza – KÖP';
+      const ticker=String(x.ticker).replace(/\\.ST$/i,'').replace(/\\./g,' ').trim();
+      const av=document.createElement('a');
+      av.href='https://www.avanza.se/sok.html';
+      av.target='_blank';av.rel='noopener';
+      av.textContent='🛒 AVANZA · KOPIERA & SÖK';
+      av.setAttribute('aria-label','Kopiera '+ticker+' och öppna Avanzas söksida');
+      av.addEventListener('click',()=>{
+        // Keep native link navigation: clipboard is requested in the same user gesture.
+        try{
+          if(navigator.clipboard && window.isSecureContext){
+            navigator.clipboard.writeText(ticker).then(()=>{
+              av.textContent='✅ '+ticker+' KOPIERAD · KListra in på Avanza';
+            }).catch(()=>{av.textContent='🔎 Sök efter '+ticker+' på Avanza';});
           }else{
-            av.href='https://www.avanza.se/sok.html?query='+encodeURIComponent(String(x.ticker||'').replace(/\.ST$/i,'').replace(/\./g,' '));
-            av.target='_blank';av.rel='noopener';av.textContent='🔎 Sök på Avanza';
-            const note=document.createElement('small');note.textContent='Direktlänk ej verifierad – kontrollera aktien innan köp.';links.append(note);
+            const field=document.createElement('textarea');
+            field.value=ticker;field.setAttribute('readonly','');
+            field.style.cssText='position:fixed;top:0;left:-9999px;opacity:0';
+            document.body.append(field);field.select();
+            const copied=document.execCommand('copy');field.remove();
+            av.textContent=copied?'✅ '+ticker+' KOPIERAD · Klistra in på Avanza':'🔎 Sök efter '+ticker+' på Avanza';
           }
-        }).catch(()=>{av.removeAttribute('aria-busy');av.href='https://www.avanza.se/sok.html?query='+encodeURIComponent(String(x.ticker||'').replace(/\.ST$/i,'').replace(/\./g,' '));av.target='_blank';av.rel='noopener';av.textContent='🔎 Sök på Avanza';});
+        }catch(e){av.textContent='🔎 Sök efter '+ticker+' på Avanza';}
+      });
+      links.append(av);
+      const hint=document.createElement('small');
+      hint.textContent='Öppnar Avanzas sök. Klistra in '+ticker+' och kontrollera rätt aktie före köp.';
+      links.append(hint);
     }
     if(links.children.length){
       const orderSummary=div.querySelector('.ki-order-compact');
