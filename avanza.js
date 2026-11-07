@@ -358,6 +358,126 @@ function paintCalendar(){
  }
 }
 initCalendar();
+
+let weekTrades=[],weekCurrenciesMixed=false,weekCurrency='SEK';
+function dateUTC(s){return new Date(s+'T12:00:00Z')}
+function isoDay(d){return d.toISOString().slice(0,10)}
+function startOfWeek(d){
+ const x=new Date(d.getTime());
+ const day=x.getUTCDay();
+ x.setUTCDate(x.getUTCDate() - ((day+6)%7));
+ return x;
+}
+function weekNumber(monday){
+ const d=new Date(Date.UTC(monday.getUTCFullYear(),monday.getUTCMonth(),monday.getUTCDate()));
+ d.setUTCDate(d.getUTCDate()+3);
+ const weekYear=d.getUTCFullYear();
+ const firstThursday=new Date(Date.UTC(weekYear,0,4));
+ firstThursday.setUTCDate(firstThursday.getUTCDate()-((firstThursday.getUTCDay()+6)%7));
+ return {week:1+Math.round((d-firstThursday)/604800000),year:weekYear};
+}
+function formatWeekDay(d){
+ return new Intl.DateTimeFormat('sv-SE',{timeZone:'UTC',day:'numeric',month:'short'}).format(d);
+}
+function renderWeekly(trades,currency,mixed){
+ const host=$('weekly-cards');host.replaceChildren();
+ if(!trades.length){
+  $('weekly-summary').textContent='Inga matchade försäljningar i vald period. Veckokorten visas så snart det finns resultat.';
+ }else if(mixed){
+  $('weekly-summary').textContent='Flera valutor i dessa affärer: vi visar antal avslut, men summerar inte SEK och USD utan valutakurs.';
+ }else{
+  $('weekly-summary').textContent='Varje veckosumma bygger på matchade försäljningar i den importerade filen. Insättningar räknas inte som vinst.';
+ }
+ const n=Number($('week-count').value)||6;
+ // Anchor on most recent sale week within selected period. This avoids a wall of empty weeks for historical exports.
+ const latest=trades.length?[...trades].sort((a,b)=>b.date.localeCompare(a.date))[0].date:null;
+ const anchor=startOfWeek(latest?dateUTC(latest):dateUTC(new Date().toISOString().slice(0,10)));
+ const weeks=[];
+ for(let i=0;i<n;i++){
+  const monday=new Date(anchor);monday.setUTCDate(anchor.getUTCDate()-7*i);
+  const sunday=new Date(monday);sunday.setUTCDate(monday.getUTCDate()+6);
+  const start=isoDay(monday),end=isoDay(sunday);
+  const records=trades.filter(t=>t.date>=start&&t.date<=end);
+  const pnl=records.reduce((total,t)=>total+t.pnl,0);
+  const wins=records.filter(t=>t.pnl>0).length;
+  const losses=records.filter(t=>t.pnl<0).length;
+  const winRate=records.length?wins/records.length*100:0;
+  weeks.push({monday,start,end,records,pnl,wins,losses,winRate});
+ }
+ const available=weeks.filter(w=>w.records.length);
+ const summaryWon=available.filter(w=>w.pnl>0).length;
+ const summaryLost=available.filter(w=>w.pnl<0).length;
+ const summaryDeals=available.reduce((sum,w)=>sum+w.records.length,0);
+ if(!mixed&&available.length){
+  const total=weeks.reduce((sum,w)=>sum+w.pnl,0);
+  $('weekly-summary').textContent='Senaste '+n+' veckorna fram till sista matchade avslutet: '+
+      fmtSigned(total,currency)+' · '+summaryDeals+' avslut · '+summaryWon+' plusveckor · '+summaryLost+' minusveckor.';
+ }
+ const max=Math.max(1,...weeks.map(w=>Math.abs(w.pnl)));
+ const fmtResult=v=>mixed?'—':fmtSigned(v,currency);
+ for(const w of weeks){
+  const iso=weekNumber(w.monday);
+  const card=document.createElement('article');
+  card.className='week-card '+(mixed||!w.records.length?'empty':w.pnl>=0?'positive':'negative');
+  const head=document.createElement('div');head.className='week-top';
+  const titleBox=document.createElement('div');
+  const title=document.createElement('div');title.className='week-title';title.textContent='Vecka '+iso.week+' · '+iso.year;
+  const range=document.createElement('div');range.className='week-range';range.textContent=formatWeekDay(w.monday)+' – '+formatWeekDay(dateUTC(w.end));
+  titleBox.append(title,range);
+  const amount=document.createElement('div');amount.className='week-value '+(!mixed&&w.pnl>0?'positive':!mixed&&w.pnl<0?'negative':'');
+  amount.textContent=w.records.length?fmtResult(w.pnl):'Inga avslut';
+  head.append(titleBox,amount);card.append(head);
+  const row=document.createElement('div');row.className='week-stats';
+  const stats=[
+   w.records.length+' avslut',
+   w.wins+' vinster / '+w.losses+' förluster',
+   w.records.length?(w.winRate.toFixed(0)+' % träffar'):'Ingen träffprocent'
+  ];
+  for(const v of stats){const badge=document.createElement('span');badge.textContent=v;row.append(badge)}
+  card.append(row);
+  const days=document.createElement('div');days.className='week-days';
+  const details=document.createElement('div');details.className='weekly-details';details.hidden=true;
+  const weekdays=['Mån','Tis','Ons','Tor','Fre'];
+  for(let i=0;i<5;i++){
+   const day=new Date(w.monday);day.setUTCDate(day.getUTCDate()+i);
+   const key=isoDay(day);
+   const list=w.records.filter(t=>t.date===key);
+   const daySum=list.reduce((sum,t)=>sum+t.pnl,0);
+   const btn=document.createElement('button');btn.type='button';
+   btn.className='week-day '+(!mixed&&list.length?(daySum>=0?'won':'lost'):'');
+   btn.setAttribute('aria-label',weekdays[i]+' '+key+': '+list.length+' avslut');
+   const label=document.createElement('span');label.textContent=weekdays[i];
+   const val=document.createElement('b');val.textContent=!list.length?'—':mixed?list.length+' st':(daySum>0?'+':'')+daySum.toLocaleString('sv-SE',{maximumFractionDigits:0});
+   btn.append(label,val);
+   btn.addEventListener('click',()=>{
+    details.replaceChildren();
+    const title=document.createElement('strong');title.textContent=weekdays[i]+' '+key+' · '+
+        (list.length?list.length+' matchade avslut':'Inga matchade avslut');
+    details.append(title);
+    if(list.length){
+      const total=document.createElement('div');total.textContent='Summa: '+fmtResult(daySum);details.append(total);
+      for(const t of list){
+       const line=document.createElement('div');
+       line.textContent=t.name+' · '+(mixed?fmtSigned(t.pnl,t.currency):fmtSigned(t.pnl,currency));
+       line.style.borderTop='1px solid #2d5264';line.style.marginTop='8px';line.style.paddingTop='8px';
+       details.append(line);
+      }
+    }
+    details.hidden=false;
+   });
+   days.append(btn);
+  }
+  card.append(days);
+  if(!mixed&&w.records.length){
+    const bar=document.createElement('div');bar.className='week-bar';
+    const fill=document.createElement('span');fill.style.width=Math.max(2,Math.round(Math.abs(w.pnl)/max*100))+'%';
+    if(w.pnl<0)fill.className='red';bar.append(fill);card.append(bar);
+  }
+  card.append(details);
+  host.append(card);
+ }
+}
+$('week-count').addEventListener('change',()=>renderWeekly(weekTrades,weekCurrency,weekCurrenciesMixed));
 function render(){
  if(!allRows.length)return;
  const account=$('account').value,period=$('period').value;
@@ -371,6 +491,8 @@ function render(){
  const unit=currencyMix?'blandade valutor':(currencies[0]||'SEK');
  const sum=items=>items.reduce((a,b)=>a+b.pnl,0);
  const wins=trades.filter(t=>t.pnl>0),losses=trades.filter(t=>t.pnl<0),flat=trades.filter(t=>Math.abs(t.pnl)<0.00001);
+ weekTrades=trades;weekCurrenciesMixed=currencyMix;weekCurrency=unit;
+ renderWeekly(trades,unit,currencyMix);
  const pnl=currencyMix?null:sum(trades);
  const totalCost=trades.reduce((a,b)=>a+b.cost,0);
  const avg=trades.length&&pnl!==null?pnl/trades.length:null;
