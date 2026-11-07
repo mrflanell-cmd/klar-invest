@@ -391,43 +391,51 @@ def avanza_js():
 
 @app.get("/api/avanza-stock")
 def avanza_stock(ticker:str, name:str=""):
-    """Find an Avanza stock page only when its ticker matches exactly."""
+    """Resolve a direct Avanza stock page only for an unambiguous ticker match."""
     symbol=re.sub(r"\\.ST$","",ticker.strip(),flags=re.I).upper().replace(".","-")
     if not symbol or len(symbol)>24 or not re.fullmatch(r"[A-Z0-9-]+",symbol):
         return {"url":None,"reason":"Ogiltig ticker"}
-    endpoint="https://www.avanza.se/_api/search/filtered-search"
-    headers={"User-Agent":"Mozilla/5.0 (compatible; KlarInvest/1.0)","Accept":"application/json","Referer":"https://www.avanza.se/"}
-    payloads=[{"query":symbol,"searchFilter":{"types":["STOCK"]},"pagination":{"from":0,"size":50}},
-              {"query":symbol,"searchFilter":{"types":["STOCK"]},"pagination":{"from":0,"size":30}}]
+    headers={"User-Agent":"Mozilla/5.0","Accept":"application/json, text/html","Referer":"https://www.avanza.se/"}
+    def norm(value):
+        return re.sub(r"[^A-Z0-9]","",str(value or "").upper().replace(".ST",""))
     def walk(obj):
         if isinstance(obj,list):
-            for value in obj:yield from walk(value)
+            for item in obj:yield from walk(item)
         elif isinstance(obj,dict):
-            if any(key in obj for key in ("tickerSymbol","symbol","shortName","orderbookId","path","url")):yield obj
-            for value in obj.values():
-                if isinstance(value,(dict,list)):yield from walk(value)
+            yield obj
+            for item in obj.values():
+                if isinstance(item,(dict,list)):yield from walk(item)
     matches=set()
-    for payload in payloads[:1]:
+    def collect(data):
+        for item in walk(data):
+            candidates=[item.get(k) for k in ("tickerSymbol","ticker","symbol","shortName","shortCode")]
+            if not any(norm(v)==norm(symbol) for v in candidates if isinstance(v,str)):continue
+            path=item.get("path") or item.get("url") or ""
+            if isinstance(path,str) and path.startswith("/") and not path.startswith("//") and ("/aktier/" in path or "/stock/" in path):
+                matches.add("https://www.avanza.se"+path)
+            elif isinstance(path,str) and path.startswith("https://www.avanza.se/") and ("/aktier/" in path or "/stock/" in path):
+                matches.add(path)
+            else:
+                oid=str(item.get("orderbookId") or item.get("id") or "")
+                if oid.isdigit() and len(oid)<16 and (item.get("instrumentType") in (None,"STOCK","stock") or item.get("type") in (None,"STOCK","stock")):
+                    matches.add("https://www.avanza.se/aktier/om-aktien.html/"+oid)
+    queries=list(dict.fromkeys([symbol,name.strip()])) if name.strip() else [symbol]
+    for query in queries:
         try:
-            response=requests.post(endpoint,json=payload,headers=headers,timeout=5)
-            response.raise_for_status()
-            data=response.json()
-            for item in walk(data):
-                candidate=str(item.get("tickerSymbol") or item.get("symbol") or item.get("shortName") or "").upper().replace(" ","-").replace(".","-")
-                if candidate!=symbol:continue
-                path=item.get("path") or item.get("url") or ""
-                if isinstance(path,str) and path.startswith("/") and not path.startswith("//") and ("/aktier/" in path or "/stock/" in path):
-                    matches.add("https://www.avanza.se"+path)
-                elif isinstance(path,str) and path.startswith("https://www.avanza.se/") and ("/aktier/" in path or "/stock/" in path):
-                    matches.add(path)
-                else:
-                    orderbook=str(item.get("orderbookId") or item.get("id") or "")
-                    if orderbook.isdigit() and len(orderbook)<16:
-                        matches.add("https://www.avanza.se/aktier/om-aktien.html/"+orderbook)
+            response=requests.post("https://www.avanza.se/_api/search/filtered-search",
+                json={"query":query,"searchFilter":{"types":["STOCK"]},"pagination":{"from":0,"size":100}},
+                headers=headers,timeout=6)
+            if response.ok:collect(response.json())
+        except (requests.RequestException,ValueError,TypeError):
+            pass
+        try:
+            response=requests.get("https://www.avanza.se/_api/search/search/"+requests.utils.quote(query,safe=""),
+                headers=headers,timeout=6)
+            if response.ok:collect(response.json())
         except (requests.RequestException,ValueError,TypeError):
             pass
     if len(matches)==1:return {"url":next(iter(matches)),"ticker":symbol}
-    return {"url":None,"reason":"Avanzas söktjänst gav ingen entydig verifierad träff"}
+    return {"url":None,"reason":"Ingen entydig direktlänk kunde verifieras hos Avanza"}
 
 @app.post("/api/scan")
 def start(o:ScanOptions):
