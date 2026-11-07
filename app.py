@@ -101,10 +101,10 @@ def universe(market):
         for row in batch:
             a = row.get("row", {})
             t = str(a.get("ticker", "")).strip().upper()
-            if a.get("market") == "OMXSTO" and re.fullmatch(r"[A-Z0-9._-]{1,20}", t):
+            if a.get("market") in ("OMXSTO", "NGM") and re.fullmatch(r"[A-Z0-9._-]{1,20}", t):
                 items.append({"ticker":t,
                               "symbol":t.replace("_","-").replace(".","-")+".ST",
-                              "name":str(a.get("name") or t)})
+                              "name":str(a.get("name") or t), "exchange":a.get("market")})
         offset += len(batch)
         if expected is not None and offset >= expected:
             break
@@ -138,8 +138,8 @@ def universe(market):
             pass
     if not items:
         raise ValueError("Kunde inte hämta någon aktielista. Försök igen senare.")
-    note = ("Öppen svensk instrumentlista; fullständigheten mot Nasdaq är inte verifierad."
-            if full else "BEGRÄNSAD TÄCKNING: " + (error_text or "Aktielistan är ofullständig."))
+    note = ("Automatiskt hämtad OMXSTO- och NGM-lista (inklusive vissa tillväxtbolag); First North/Spotlight och fullständig täckning är INTE verifierade. Yahoo-kursdata kan saknas för NGM."
+            if full else "BEGRÄNSAD TÄCKNING (OMXSTO/NGM): " + (error_text or "Aktielistan är ofullständig."))
     return list({item["ticker"]:item for item in items}.values()), note
 
 def history(item,market):
