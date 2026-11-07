@@ -1,11 +1,11 @@
 <!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#071826"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="KLAR INVEST"><title>KLAR INVEST – Screener</title><style>
 *{box-sizing:border-box}body{background:#071826;color:#effaff;margin:0;font:16px -apple-system,BlinkMacSystemFont,Arial,sans-serif}main{max-width:760px;margin:auto;padding:26px 17px}header{padding:30px 0 10px}h1{font-size:39px;margin:0;letter-spacing:-1px}h1 span{color:#35dfab}.subtitle{color:#92c8eb;font-size:14px;letter-spacing:1px}section{background:#0d283a;padding:23px;border:1px solid #29516a;border-radius:23px;margin:20px 0}h2{margin:0 0 15px;font-size:23px}label{font-weight:700;display:block;margin:15px 0 8px}select,input{width:100%;background:#071a29;color:white;border:1px solid #608398;border-radius:12px;padding:14px;font-size:18px}button{width:100%;border:0;border-radius:14px;background:#37dfaa;color:#073023;padding:18px;font-size:21px;font-weight:900;margin-top:24px}button:disabled{opacity:.55}details{margin:16px 0;color:#a7d3f1}summary{cursor:pointer}p.note{font-size:14px;color:#b3cad9;line-height:1.5}.status{padding:14px;border-left:4px solid #89ceff;background:#081f31;border-radius:10px}.item{padding:15px;margin:12px 0;background:#081e2e;border:1px solid #295470;border-radius:12px}a{color:#8bceff}.good{color:#46e2ab;font-weight:800}.warn{color:#ffcc83}#stats{font-size:14px;color:#a2cbe2;line-height:1.7}pre{white-space:pre-wrap;word-break:break-word;font-size:12px}.scan-controls button{margin-top:10px;background:#244c62;color:#f1fbff;font-size:16px;padding:13px}.scan-controls #resume-scan{background:#37dfaa;color:#073023}.scan-controls button[hidden]{display:none}.scan-controls button:disabled{opacity:.5}.price-detail{font-weight:800;color:#42e3b1;margin-bottom:6px}.entry-detail{color:#b4d6eb;line-height:1.5;margin-top:4px}
-#commodity-options[hidden],#price-filters[hidden]{display:none}.history-entry{width:100%;background:#103348;color:#f1f9fc;text-align:left;margin:9px 0;padding:14px;font-size:15px;border:1px solid #3d6880;border-radius:12px;font-weight:600;line-height:1.5}.history-entry small{display:block;color:#9fc8df;font-weight:400;margin-top:5px}.secondary-btn{background:#25485c;color:#f2ffff;padding:12px;font-size:15px;margin-top:12px}.history-label{color:#61e5b6;font-weight:800;font-size:13px}.history-empty{color:#aac6d7;font-size:14px}.ki-tabs{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0 19px}.ki-tabs button{margin:0;font-size:15px;padding:13px 8px;background:#15364b;color:#d1e6f1;border:1px solid #35647a}.ki-tabs button.active{background:#2ed6a2;color:#073323;border-color:#2ed6a2}.ki-tabview[hidden],.ki-tip[hidden],#daily-view[hidden]{display:none}.ki-tip{margin:16px 0;padding:17px;border-radius:16px;background:linear-gradient(130deg,#103c4b,#10283e);border:1px solid #397983}.ki-eyebrow{color:#61e5b6;font-size:12px;letter-spacing:1px;font-weight:800;text-transform:uppercase}.ki-quote{font-size:18px;line-height:1.52;font-weight:650;margin:10px 0}.ki-tip-author{color:#a7c9db;font-size:13px}.ki-next{margin-top:12px;padding:10px 14px;font-size:14px;border:1px solid #427789;background:#173c4e;color:#e1f9f9;width:auto}.ki-reflection{line-height:1.5;color:#c5dce9;margin:10px 0}.ki-wisdom-label{margin:8px 0;color:#a4c8d9;font-size:14px}.ki-today{font-size:14px;color:#69e4b5}.ki-progress{height:5px;background:#17405a;border-radius:10px;overflow:hidden;margin-top:14px}.ki-progress>span{display:block;height:100%;background:#34dca6;width:0;transition:width .25s}.ki-date{margin-top:12px}</style></head><body><main><header><h1>KLAR <span>INVEST</span></h1><div class="subtitle">SCREENER · AKTIER & RÅVAROR</div><p class="note">Välj formation. Välj marknad. Skanna aktier.</p></header><nav class="ki-tabs" aria-label="Välj flik"><button type="button" id="tab-scanner" class="active" aria-pressed="true">🔎 Skanner</button><button type="button" id="tab-wisdom" aria-pressed="false">📖 Trading Wisdom</button></nav><div id="scanner-view" class="ki-tabview"><section><h2>1. Välj vad du söker</h2><label for="pattern">Ljusformation</label><select id="pattern"><option value="piercing">Piercing Line – 3 ljus</option><option value="engulfing">Bullish Engulfing</option><option value="hammer">Hammer</option></select><label for="market">Marknad</label><select id="market"><option value="SE">🇸🇪 Sverige</option><option value="US">🇺🇸 USA (Nasdaq)</option><option value="COM">🛢️ Råvaror – Commodities</option></select>
+#commodity-options[hidden],#price-filters[hidden]{display:none}.history-entry{width:100%;background:#103348;color:#f1f9fc;text-align:left;margin:9px 0;padding:14px;font-size:15px;border:1px solid #3d6880;border-radius:12px;font-weight:600;line-height:1.5}.history-entry small{display:block;color:#9fc8df;font-weight:400;margin-top:5px}.secondary-btn{background:#25485c;color:#f2ffff;padding:12px;font-size:15px;margin-top:12px}.history-label{color:#61e5b6;font-weight:800;font-size:13px}.history-empty{color:#aac6d7;font-size:14px}.ki-tabs{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0 19px}.ki-tabs button{margin:0;font-size:15px;padding:13px 8px;background:#15364b;color:#d1e6f1;border:1px solid #35647a}.ki-tabs button.active{background:#2ed6a2;color:#073323;border-color:#2ed6a2}.ki-tabview[hidden],.ki-tip[hidden],#daily-view[hidden]{display:none}.ki-tip{margin:16px 0;padding:17px;border-radius:16px;background:linear-gradient(130deg,#103c4b,#10283e);border:1px solid #397983}.ki-eyebrow{color:#61e5b6;font-size:12px;letter-spacing:1px;font-weight:800;text-transform:uppercase}.ki-quote{font-size:18px;line-height:1.52;font-weight:650;margin:10px 0}.ki-tip-author{color:#a7c9db;font-size:13px}.ki-next{margin-top:12px;padding:10px 14px;font-size:14px;border:1px solid #427789;background:#173c4e;color:#e1f9f9;width:auto}.ki-reflection{line-height:1.5;color:#c5dce9;margin:10px 0}.ki-wisdom-label{margin:8px 0;color:#a4c8d9;font-size:14px}.ki-today{font-size:14px;color:#69e4b5}.ki-progress{height:5px;background:#17405a;border-radius:10px;overflow:hidden;margin-top:14px}.ki-progress>span{display:block;height:100%;background:#34dca6;width:0;transition:width .25s}.ki-date{margin-top:12px}.ki-daily-preview{display:block;text-align:left;width:100%;margin:8px 0 16px;padding:16px 18px;background:linear-gradient(120deg,#143548,#0b283b);border:1px solid #377b75;border-radius:15px;color:#eafff6}.ki-daily-preview strong{display:block;margin:7px 0;font-size:17px;line-height:1.4}.ki-daily-preview .ki-preview-date{color:#6be5b9;font-size:13px;font-weight:800}.ki-daily-preview .ki-preview-open{font-size:13px;color:#97d0f5;font-weight:700}.ki-daily-preview:hover{border-color:#49e3ad}.ki-daily-preview:focus-visible{outline:3px solid #7bdbfc}.ki-page-date{font-size:15px;font-weight:700;color:#8befcb;margin:14px 0 18px}.ki-daily-page{padding:6px 0 8px}.ki-page-reflect-title{font-weight:700;color:#7ee5bb;margin-top:20px}</style></head><body><main><header><h1>KLAR <span>INVEST</span></h1><div class="subtitle">SCREENER · AKTIER & RÅVAROR</div><p class="note">Välj formation. Välj marknad. Skanna aktier.</p></header><button type="button" id="today-preview" class="ki-daily-preview" aria-label="Öppna dagens visdomsord"><span class="ki-preview-date" id="preview-date"></span><strong id="preview-quote"></strong><span class="ki-preview-open">📖 Läs dagens visdomsord →</span></button><nav class="ki-tabs" aria-label="Välj flik"><button type="button" id="tab-scanner" class="active" aria-pressed="true">🔎 Skanner</button><button type="button" id="tab-wisdom" aria-pressed="false">📖 Trading Wisdom</button></nav><div id="scanner-view" class="ki-tabview"><section><h2>1. Välj vad du söker</h2><label for="pattern">Ljusformation</label><select id="pattern"><option value="piercing">Piercing Line – 3 ljus</option><option value="engulfing">Bullish Engulfing</option><option value="hammer">Hammer</option></select><label for="market">Marknad</label><select id="market"><option value="SE">🇸🇪 Sverige</option><option value="US">🇺🇸 USA (Nasdaq)</option><option value="COM">🛢️ Råvaror – Commodities</option></select>
 <div id="commodity-options" hidden><label for="commodity-group">Välj råvarugrupp</label>
 <select id="commodity-group"><option value="all">Alla råvaror</option><option value="metals">🥇 Metaller: guld, silver, platina...</option>
 <option value="energy">🛢️ Energi: olja, naturgas...</option><option value="grains">🌾 Spannmål och jordbruk</option>
 <option value="softs">☕ Kaffe, kakao, socker, bomull...</option><option value="livestock">🐄 Nötkreatur och grisar</option></select>
-<p class="note">Råvaror visas som terminskontrakt. Priserna kan vara i USD, USD per fat eller amerikanska cent per pund. Ingen aktieprisgräns tillämpas på råvaror.</p></div><details id="price-filters"><summary>Avancerat: prisintervall</summary><label>Minsta pris</label><input id="min" type="number" value="10"><label>Högsta pris</label><input id="max" type="number" value="800"></details><button id="scan">🔎 SKANNA AKTIER</button><div class="scan-controls"><button id="pause-scan" type="button" hidden>⏸ Pausa sökning</button><button id="resume-scan" type="button" hidden>▶ Fortsätt senaste pausade sökningen</button><button id="new-scan" type="button" hidden>↻ Ny sökning</button></div><p class="note">Skanningen kräver internetanslutning och tillgängliga börskurser. Inga order läggs.</p></section><section><h2>2. Dina aktier</h2><div class="status" id="status">Redo. Tryck Skanna.</div><p id="stats"></p><div class="ki-progress" id="scan-progress" hidden><span id="scan-progress-bar"></span></div><div class="ki-tip" id="scan-tip" hidden aria-live="off"><div class="ki-eyebrow">💡 Medan marknaden skannas</div><p id="scan-tip-quote" class="ki-quote"></p><div id="scan-tip-author" class="ki-tip-author"></div><button type="button" class="ki-next" id="scan-next-tip">Visa ett annat tips ↻</button></div><div id="results"></div></section><section><h2>3. Sökhistorik</h2><p class="note">Sparade sökningar på den här telefonen. Tryck på en sökning för att visa aktierna igen, utan att skanna på nytt.</p><div id="history"></div></section></div><section class="ki-tabview" id="daily-view" hidden><div class="ki-eyebrow">365 Days of Trading Wisdom</div><h2>📖 Dagens tradingvisdom</h2><div class="ki-today" id="wisdom-date"></div><p class="ki-quote" id="wisdom-quote"></p><div class="ki-tip-author" id="wisdom-author"></div><p class="ki-reflection" id="wisdom-reflection"></p><button type="button" id="wisdom-next" class="ki-next">Nästa citat ↻</button><button type="button" id="wisdom-today" class="ki-next">Visa dagens citat</button><p class="note">Ett urval citat ur bokidén tillsammans med nya tips för KLAR INVEST. Ännu inte hela bokens 365 färdiga sidor. Visdomsord är påminnelser, inte köpsignaler.</p></section><p class="note">Data: öppen, icke-officiell instrumentlista samt extern kurstjänst. Det är inte garanterat att hela marknaden täcks. Vi visar alltid verkligt antal kontrollerade aktier och datafel. Dagsljus för pågående handel används inte som slutkurser. Sökningen körs på servern och sidan försöker återansluta när du låser upp telefonen. Vid omstart av gratisservern kan pågående sökningar gå förlorade.</p></main><script>
+<p class="note">Råvaror visas som terminskontrakt. Priserna kan vara i USD, USD per fat eller amerikanska cent per pund. Ingen aktieprisgräns tillämpas på råvaror.</p></div><details id="price-filters"><summary>Avancerat: prisintervall</summary><label>Minsta pris</label><input id="min" type="number" value="10"><label>Högsta pris</label><input id="max" type="number" value="800"></details><button id="scan">🔎 SKANNA AKTIER</button><div class="scan-controls"><button id="pause-scan" type="button" hidden>⏸ Pausa sökning</button><button id="resume-scan" type="button" hidden>▶ Fortsätt senaste pausade sökningen</button><button id="new-scan" type="button" hidden>↻ Ny sökning</button></div><p class="note">Skanningen kräver internetanslutning och tillgängliga börskurser. Inga order läggs.</p></section><section><h2>2. Dina aktier</h2><div class="status" id="status">Redo. Tryck Skanna.</div><p id="stats"></p><div class="ki-progress" id="scan-progress" hidden><span id="scan-progress-bar"></span></div><div class="ki-tip" id="scan-tip" hidden aria-live="off"><div class="ki-eyebrow">💡 Medan marknaden skannas</div><p id="scan-tip-quote" class="ki-quote"></p><div id="scan-tip-author" class="ki-tip-author"></div><button type="button" class="ki-next" id="scan-next-tip">Visa ett annat tips ↻</button></div><div id="results"></div></section><section><h2>3. Sökhistorik</h2><p class="note">Sparade sökningar på den här telefonen. Tryck på en sökning för att visa aktierna igen, utan att skanna på nytt.</p><div id="history"></div></section></div><section class="ki-tabview" id="daily-view" hidden><div class="ki-eyebrow">365 Days of Trading Wisdom</div><h2>📖 Dagens tradingvisdom</h2><div class="ki-page-date" id="wisdom-date"></div><p class="ki-quote" id="wisdom-quote"></p><div class="ki-tip-author" id="wisdom-author"></div><div class="ki-page-reflect-title">Dagens reflektion</div><p class="ki-reflection" id="wisdom-reflection"></p><button type="button" class="ki-next" id="wisdom-back">← Tillbaka till skannern</button><button type="button" id="wisdom-next" class="ki-next">Nästa citat ↻</button><button type="button" id="wisdom-today" class="ki-next">Visa dagens citat</button><p class="note">Ett urval citat ur bokidén tillsammans med nya tips för KLAR INVEST. Ännu inte hela bokens 365 färdiga sidor. Visdomsord är påminnelser, inte köpsignaler.</p></section><p class="note">Data: öppen, icke-officiell instrumentlista samt extern kurstjänst. Det är inte garanterat att hela marknaden täcks. Vi visar alltid verkligt antal kontrollerade aktier och datafel. Dagsljus för pågående handel används inte som slutkurser. Sökningen körs på servern och sidan försöker återansluta när du låser upp telefonen. Vid omstart av gratisservern kan pågående sökningar gå förlorade.</p></main><script>
 const WISDOM = [
  {q:"The signal doesn’t make the trade. The context does.",author:"365 Days of Trading Wisdom · Karl Norberg",reflection:"En signal är början på en kontroll, inte ett löfte om avkastning."},
  {q:"You don’t have to trade every day. Another opportunity will come.",author:"365 Days of Trading Wisdom",reflection:"Att avstå är också ett aktivt beslut."},
@@ -27,11 +27,26 @@ const WISDOM = [
 let tipIndex=0;
 let tipTimer=null;
 let showingDailyIndex=0;
+let showingToday=true;
+function stockholmDay(){
+ const parts=new Intl.DateTimeFormat('en-US',{timeZone:'Europe/Stockholm',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+ const values=Object.fromEntries(parts.map(p=>[p.type,p.value]));
+ const y=Number(values.year),m=Number(values.month),d=Number(values.day);
+ const start=Date.UTC(y,0,1),current=Date.UTC(y,m-1,d);
+ return {year:y,month:m,day:d,dayIndex:Math.round((current-start)/86400000)};
+}
 function wisdomDayIndex(){
- const now=new Date(), yr=now.getFullYear();
- const first=new Date(yr,0,1);
- const day=Math.floor((new Date(yr,now.getMonth(),now.getDate())-first)/86400000);
- return day%WISDOM.length;
+ const {dayIndex}=stockholmDay();
+ return dayIndex%WISDOM.length;
+}
+function wisdomDateLabel(){
+ const d=stockholmDay();
+ return new Intl.DateTimeFormat('sv-SE',{timeZone:'UTC',weekday:'long',year:'numeric',month:'long',day:'numeric'}).format(new Date(Date.UTC(d.year,d.month-1,d.day)));
+}
+function paintTodayPreview(){
+ const index=wisdomDayIndex(),item=WISDOM[index];
+ $('preview-date').textContent='DAGENS DATUM · '+wisdomDateLabel();
+ $('preview-quote').textContent='“'+item.q+'”';
 }
 function paintTip(){
  const t=WISDOM[tipIndex%WISDOM.length];
@@ -40,7 +55,7 @@ function paintTip(){
 }
 function paintDaily(){
  const t=WISDOM[showingDailyIndex%WISDOM.length];
- $('wisdom-date').textContent=new Date().toLocaleDateString('sv-SE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+ $('wisdom-date').textContent=(showingToday?'Dagens datum · ':'Ur citatsamlingen · ')+wisdomDateLabel();
  $('wisdom-quote').textContent='“'+t.q+'”';
  $('wisdom-author').textContent=t.author;
  $('wisdom-reflection').textContent=t.reflection;
@@ -56,15 +71,17 @@ function switchTab(name){
  if(!scanner)paintDaily();
 }
 $('tab-scanner').addEventListener('click',()=>switchTab('scanner'));
-$('tab-wisdom').addEventListener('click',()=>switchTab('wisdom'));
+$('tab-wisdom').addEventListener('click',()=>{showingToday=true;showingDailyIndex=wisdomDayIndex();switchTab('wisdom');});
+$('today-preview').addEventListener('click',()=>{showingToday=true;showingDailyIndex=wisdomDayIndex();switchTab('wisdom');$('daily-view').scrollIntoView({behavior:'smooth',block:'start'});});
+$('wisdom-back').addEventListener('click',()=>{switchTab('scanner');window.scrollTo({top:0,behavior:'smooth'});});
 $('scan-next-tip').addEventListener('click',()=>{
  tipIndex=(tipIndex+1)%WISDOM.length;paintTip();
 });
 $('wisdom-next').addEventListener('click',()=>{
- showingDailyIndex=(showingDailyIndex+1)%WISDOM.length;paintDaily();
+ showingToday=false;showingDailyIndex=(showingDailyIndex+1)%WISDOM.length;paintDaily();
 });
 $('wisdom-today').addEventListener('click',()=>{
- showingDailyIndex=wisdomDayIndex();paintDaily();
+ showingToday=true;showingDailyIndex=wisdomDayIndex();paintTodayPreview();paintDaily();
 });
 function updateWisdomLoading(running,scanned=0,total=0){
  $('scan-tip').hidden=!running;
@@ -85,6 +102,7 @@ function updateWisdomLoading(running,scanned=0,total=0){
 }
 showingDailyIndex=wisdomDayIndex();
 tipIndex=wisdomDayIndex();
+paintTodayPreview();
 paintDaily();
 paintTip();
 
@@ -392,7 +410,13 @@ $('new-scan').addEventListener('click',()=>{
   updateControls();
   beginScan(currentOptions());
 });
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&activeJob)schedule(100)});
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden){
+    paintTodayPreview();
+    if(showingToday){showingDailyIndex=wisdomDayIndex();paintDaily();}
+    if(activeJob)schedule(100);
+  }
+});
 window.addEventListener('pageshow',()=>{if(activeJob)schedule(100)});
 window.addEventListener('online',()=>{if(activeJob)schedule(100)});
 syncMarketUI();
