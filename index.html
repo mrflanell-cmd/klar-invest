@@ -442,11 +442,11 @@ function renderResults(s){
             av.href=result.url;av.target='_blank';av.rel='noopener';
             av.textContent='🛒 Avanza – KÖP';
           }else{
-            av.href='https://www.avanza.se/sok.html?query='+encodeURIComponent(x.name||x.ticker);
+            av.href='https://www.avanza.se/sok.html?query='+encodeURIComponent(String(x.ticker||'').replace(/\.ST$/i,'').replace(/\./g,' '));
             av.target='_blank';av.rel='noopener';av.textContent='🔎 Sök på Avanza';
             const note=document.createElement('small');note.textContent='Direktlänk ej verifierad – kontrollera aktien innan köp.';links.append(note);
           }
-        }).catch(()=>{av.removeAttribute('aria-busy');av.href='https://www.avanza.se/sok.html?query='+encodeURIComponent(x.name||x.ticker);av.target='_blank';av.rel='noopener';av.textContent='🔎 Sök på Avanza';});
+        }).catch(()=>{av.removeAttribute('aria-busy');av.href='https://www.avanza.se/sok.html?query='+encodeURIComponent(String(x.ticker||'').replace(/\.ST$/i,'').replace(/\./g,' '));av.target='_blank';av.rel='noopener';av.textContent='🔎 Sök på Avanza';});
     }
     if(links.children.length){
       const orderSummary=div.querySelector('.ki-order-compact');
