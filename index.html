@@ -148,7 +148,7 @@ function switchTab(name){
 }
 $('tab-scanner').addEventListener('click',()=>switchTab('scanner'));
 $('tab-legends').addEventListener('click',()=>switchTab('legends'));
-document.querySelectorAll('[data-legend]').forEach(btn=>btn.addEventListener('click',()=>{const p=$('pattern');p.value=btn.dataset.legend;p.dispatchEvent(new Event('change',{bubbles:true}));switchTab('scanner');if(typeof go==='function'){};document.getElementById('pattern').scrollIntoView({behavior:'smooth',block:'center'});}));
+document.querySelectorAll('[data-legend]').forEach(btn=>btn.addEventListener('click',()=>{const p=$('pattern');p.value=btn.dataset.legend;p.dispatchEvent(new Event('change',{bubbles:true}));switchTab('scanner');document.dispatchEvent(new Event('ki-open-strategy'));}));
 $('tab-wisdom').addEventListener('click',()=>{showingToday=true;showingDailyIndex=wisdomDayIndex();switchTab('wisdom');});
 $('today-preview').addEventListener('click',()=>{showingToday=true;showingDailyIndex=wisdomDayIndex();switchTab('wisdom');$('daily-view').scrollIntoView({behavior:'smooth',block:'start'});});
 $('wisdom-back').addEventListener('click',()=>{switchTab('scanner');window.scrollTo({top:0,behavior:'smooth'});});
@@ -722,6 +722,7 @@ updateControls();
  if(rules){const header=rules.querySelector('.ki-rules-top');const content=document.createElement('details');content.id='ki-rules-collapse';content.open=true;const summary=document.createElement('summary');summary.textContent='📖 Visa / minimera strategins regler';const nodes=Array.from(rules.children).filter(x=>x!==header);nodes.forEach(n=>content.appendChild(n));rules.appendChild(content);rules.insertBefore(summary,content);summary.addEventListener('click',()=>{content.open=!content.open;});}
  function renderReview(){const label=id=>{const s=document.getElementById(id);return s.options[s.selectedIndex]?.text||s.value;};const c=document.getElementById('risk-capital').value,l=document.getElementById('risk-loss').value,p=document.getElementById('risk-position').value;const review=document.getElementById('wizard-review');review.replaceChildren();const title=document.createElement('strong');title.textContent='DIN SÖKPLAN';review.append(title);[['Strategi',label('pattern')],['Marknad',label('market')],['Kapital',c+' kr'],['Max förlust per affär',l+' kr'],['Max position',p+' %']].forEach(([k,v])=>{const d=document.createElement('div');d.textContent=k+': '+v;review.append(d);});}
  function go(next){if(next<0||next>=panels.length)return;step=next;panels.forEach((el,i)=>el.hidden=i!==step);document.getElementById('wizard-progress').textContent='STEG '+(step+1)+' AV 4 · '+names[step];if(step===3)renderReview();const heading=document.getElementById('wizard-progress');heading.scrollIntoView({behavior:'smooth',block:'start'});}
+ document.addEventListener('ki-open-strategy',()=>go(0));
  document.querySelectorAll('[data-next]').forEach(b=>b.addEventListener('click',()=>go(Number(b.dataset.next))));document.querySelectorAll('[data-back]').forEach(b=>b.addEventListener('click',()=>go(Number(b.dataset.back))));
  go(0);
 })();
