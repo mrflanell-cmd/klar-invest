@@ -187,9 +187,9 @@ def universe(market):
             if full else "BEGRÄNSAD TÄCKNING (OMXSTO/NGM): " + (error_text or "Aktielistan är ofullständig."))
     return list({item["symbol"]:item for item in items}.values()), note + " First North-tillägg: " + str(len(first_north)) + " instrument. " + error_text
 
-def history(item,market):
+def history(item,market,period=None):
     url="https://query1.finance.yahoo.com/v8/finance/chart/"+requests.utils.quote(item["symbol"],safe="")
-    r=requests.get(url,params={"range":"1y" if item.get("nova") or item.get("legend") else "3mo","interval":"1d"},headers={"User-Agent":"Mozilla/5.0"},timeout=12)
+    r=requests.get(url,params={"range":period or ("1y" if item.get("nova") or item.get("legend") else "3mo"),"interval":"1d"},headers={"User-Agent":"Mozilla/5.0"},timeout=12)
     r.raise_for_status()
     result=r.json().get("chart",{}).get("result") or []
     if not result:raise ValueError("Inga kursdata")
@@ -282,7 +282,7 @@ def detect(bars,pattern,low,high):
         if entry<=stop:return None
         status="BEKRÄFTAD"
     elif pattern=="piercing":
-        confirmed=pierce(a,b) and c["close"]>c["open"] and c["close"]>a["open"]
+        confirmed=pierce(a,b) and c["close"]>a["open"]
         waiting=pierce(b,c)
         if not confirmed and not waiting:return None
         status="BEKRÄFTAD" if confirmed else "OBEKRÄFTAD – EJ KÖP"
@@ -436,6 +436,60 @@ def avanza_stock(ticker:str, name:str=""):
             pass
     if len(matches)==1:return {"url":next(iter(matches)),"ticker":symbol}
     return {"url":None,"reason":"Ingen entydig direktlänk kunde verifieras hos Avanza"}
+
+# Five-year, cached historical test. Results are illustrative historical simulations, never orders.
+BACKTEST_CACHE={}
+BACKTEST_LOCK=threading.Lock()
+@app.get("/api/backtest")
+def backtest(symbol:str,market:str="SE"):
+    if market not in ("SE","US") or not re.fullmatch(r"[A-Za-z0-9.^=-]{1,35}",symbol):
+        return {"error":"Ogiltigt instrument"}
+    key=(symbol,market)
+    with BACKTEST_LOCK:
+        cached=BACKTEST_CACHE.get(key)
+        if cached and time.time()-cached[0]<86400:return cached[1]
+    try:
+        bars=history({"symbol":symbol},market,"5y")
+        strategies=("piercing","hidden_gate","nova")
+        board=[]
+        for strategy in strategies:
+            trades=[];unfilled=0;ambiguous=0
+            for i in range(205,len(bars)-1):
+                signal=detect(bars[:i+1],strategy,0,1e12)
+                if not signal or signal.get("status")!="BEKRÄFTAD":continue
+                entry=float(signal["entry"]);stop=float(signal["stop"])
+                risk=entry-stop
+                if risk<=0:continue
+                # Signal at close of day i. Limit can fill only on later sessions.
+                fill=None
+                for j in range(i+1,min(i+6,len(bars))):
+                    if bars[j]["low"]<=entry<=bars[j]["high"]:
+                        fill=j;break
+                    if bars[j]["open"]<entry:break # price gapped below stop/entry, no assumed fill
+                if fill is None:
+                    unfilled+=1;continue
+                target=entry+2*risk;outcome=None
+                for j in range(fill,min(fill+21,len(bars))):
+                    bar=bars[j]
+                    if bar["low"]<=stop and bar["high"]>=target:
+                        ambiguous+=1;outcome=-1;break # conservative ambiguity
+                    if bar["low"]<=stop:outcome=-1;break
+                    if bar["high"]>=target:outcome=2;break
+                if outcome is not None:trades.append(outcome)
+            wins=sum(v>0 for v in trades);losses=sum(v<0 for v in trades)
+            board.append({"strategy":strategy,"trades":len(trades),"wins":wins,
+                "win_rate":round(100*wins/len(trades),1) if trades else None,
+                "total_r":round(sum(trades),1),"profit_factor":round(2*wins/losses,2) if losses else None,
+                "unfilled":unfilled,"ambiguous_conservative":ambiguous})
+        eligible=[x for x in board if x["trades"]>=20 and x["profit_factor"] is not None]
+        winner=max(eligible,key=lambda x:x["profit_factor"])["strategy"] if eligible else None
+        result={"symbol":symbol,"market":market,"years":5,"bars":len(bars),"leaderboard":board,
+            "historical_best":winner,"min_trades_for_ranking":20,
+            "method":"Daily OHLC; limit valid for five sessions; 2R target, 1R stop; 20-session maximum hold; ambiguous stop/target days counted as losses; no fees, FX, slippage or dividends; unfinished trades excluded.",
+            "warning":"Historiska simuleringar är ingen garanti. Ingen rekommendation om köp."}
+        with BACKTEST_LOCK:BACKTEST_CACHE[key]=(time.time(),result)
+        return result
+    except Exception as exc:return {"error":"Backtest kunde inte slutföras: "+str(exc)[:140]}
 
 @app.post("/api/scan")
 def start(o:ScanOptions):
