@@ -49,7 +49,7 @@ function parseCSV(text){
   date:index(['datum','affarsdag']),account:index(['konto']),type:index(['typavtransaktion','transaktionstyp']),
   name:index(['vardepapperbeskrivning','vardepapper','instrumentnamn']),quantity:index(['antal']),
   amount:index(['belopp']),fee:index(['courtage']),currency:index(['transaktionsvaluta','valuta']),
-  securityCurrency:index(['instrumentvaluta']),isin:index(['isin']),price:index(['kurs']),exchange:index(['valutakurs'])
+  securityCurrency:index(['instrumentvaluta']),isin:index(['isin']),ticker:index(['kortnamn','ticker','borskod','symbol']),price:index(['kurs']),exchange:index(['valutakurs'])
  };
  if(mapping.date<0||mapping.type<0||mapping.name<0||mapping.amount<0)throw Error('CSV saknar nödvändiga kolumner: Datum, Typ av transaktion, Värdepapper eller Belopp.');
  let output=[];
@@ -62,7 +62,7 @@ function parseCSV(text){
     type:field('type'),name:field('name')||'Okänt värdepapper',
     quantity:numeric(field('quantity')),amount:numeric(field('amount')),
     price:numeric(field('price')),fee:numeric(field('fee')),
-    currency:field('currency').toUpperCase()||'SEK', isin:field('isin'),
+    currency:field('currency').toUpperCase()||'SEK', isin:field('isin'),ticker:field('ticker').toUpperCase(),
     instrumentCurrency:field('securityCurrency').toUpperCase(),
     exchange:numeric(field('exchange')),line:j+1};
   row.category=category(row.type);
@@ -118,7 +118,7 @@ function buildAnalysis(rows){
    if(matched>0){
     const value=proceeds*(matched/qty);
     const pnl=value-cost;
-    trades.push({date:row.date,name:row.name,account:row.account,currency:row.currency,qty:matched,pnl,cost,proceeds:value,partial:remaining>1e-9});
+    trades.push({date:row.date,name:row.name,isin:row.isin,ticker:row.ticker,account:row.account,currency:row.currency,qty:matched,pnl,cost,proceeds:value,partial:remaining>1e-9});
    }
   }
  }
@@ -379,6 +379,36 @@ function weekNumber(monday){
 function formatWeekDay(d){
  return new Intl.DateTimeFormat('sv-SE',{timeZone:'UTC',day:'numeric',month:'short'}).format(d);
 }
+
+// Do not guess exchange from the security name. Only known verified symbols or explicit exchange-qualified tickers open directly.
+const VERIFIED_TV_SYMBOLS=new Map([
+  ['meko','OMXSTO:MEKO'],
+  ['miko','OMXSTO:MEKO'],
+  ['np3fastigheter','OMXSTO:NP3'],
+  ['vnvglobal','OMXSTO:VNV'],
+  ['alcadongroup','OMXSTO:ALCA']
+]);
+function tradingViewLink(trade){
+  const ticker=String(trade.ticker||'').trim().toUpperCase();
+  if(/^[A-Z0-9_.-]{2,15}:[A-Z0-9_.-]{1,20}$/.test(ticker)){
+    return {url:'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(ticker)+'&interval=D',direct:true};
+  }
+  const known=VERIFIED_TV_SYMBOLS.get(norm(trade.name));
+  if(known)return {url:'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(known)+'&interval=D',direct:true};
+  // Link to chart with in-chart symbol search rather than silently opening a potentially wrong company.
+  return {url:'https://www.tradingview.com/chart/',direct:false};
+}
+function makeTradingViewAnchor(trade){
+ const ref=tradingViewLink(trade);
+ const a=document.createElement('a');
+ a.href=ref.url;
+ a.target='_blank';a.rel='noopener noreferrer';
+ a.className='stock-chart-link';
+ a.textContent=trade.name+' ↗';
+ a.title=ref.direct?'Öppna aktiens dagsdiagram på TradingView':
+   'Öppna TradingView. Sök aktien med namn eller ISIN: '+(trade.isin||trade.name);
+ return a;
+}
 function renderWeekly(trades,currency,mixed){
  const host=$('weekly-cards');host.replaceChildren();
  if(!trades.length){
@@ -458,8 +488,18 @@ function renderWeekly(trades,currency,mixed){
       const total=document.createElement('div');total.textContent='Summa: '+fmtResult(daySum);details.append(total);
       for(const t of list){
        const line=document.createElement('div');
-       line.textContent=t.name+' · '+(mixed?fmtSigned(t.pnl,t.currency):fmtSigned(t.pnl,currency));
+       const link=makeTradingViewAnchor(t);
+       const result=document.createElement('span');
+       result.textContent=' · '+(mixed?fmtSigned(t.pnl,t.currency):fmtSigned(t.pnl,currency));
+       result.style.color=t.pnl>=0?'#5be4b6':'#ffb1bd';
        line.style.borderTop='1px solid #2d5264';line.style.marginTop='8px';line.style.paddingTop='8px';
+       line.append(link,result);
+       if(!tradingViewLink(t).direct){
+         const note=document.createElement('div');
+         note.className='tv-hint';
+         note.textContent='Sök '+(t.isin||t.name)+' i TradingView för att välja rätt aktie';
+         line.append(note);
+       }
        details.append(line);
       }
     }
