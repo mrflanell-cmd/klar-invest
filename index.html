@@ -269,14 +269,14 @@ function renderResults(s){
   }
   const confirmed=results.filter(x=>x.status==='BEKRÄFTAD');
   const unconfirmed=results.filter(x=>x.status!=='BEKRÄFTAD');
-  for(const [label,group] of [['✅ Bekräftade signaler',confirmed],['⏳ Obekräftade kandidater – EJ KÖP',unconfirmed]]){
+  for(const [label,group] of [['✅ Bekräftade möjligheter',confirmed],['⏳ Obekräftade möjligheter – EJ KÖP',unconfirmed]]){
     const isUnconfirmed=label.startsWith('⏳');
     let groupHolder=holder;
     if(isUnconfirmed){
       const fold=document.createElement('details');fold.className='ki-unconfirmed-fold';
       fold.open=!!window.kiUnconfirmedExpanded;
       const summary=document.createElement('summary');summary.className='ki-unconfirmed-toggle';
-      const headline=document.createElement('span');headline.className='ki-unconfirmed-headline';headline.textContent='⏳ '+group.length+' OBEKRÄFTADE KANDIDATER';
+      const headline=document.createElement('span');headline.className='ki-unconfirmed-headline';headline.textContent='⏳ '+group.length+' OBEKRÄFTADE MÖJLIGHETER';
       const action=document.createElement('span');action.className='ki-unconfirmed-action';action.textContent=fold.open?'▲ MINIMERA LISTAN':'▼ VISA ALLA KANDIDATER';
       summary.append(headline,action);fold.append(summary);
       const hint=document.createElement('p');hint.className='ki-unconfirmed-hint';hint.textContent='Ej köpsignaler · Tryck för att se detaljer och TradingView-länkar';fold.append(hint);
@@ -286,7 +286,7 @@ function renderResults(s){
     }else{
       const heading=document.createElement('h3');heading.textContent=label+' ('+group.length+')';holder.append(heading);
     }
-    if(!group.length){const empty=document.createElement('p');empty.className='note';empty.textContent=isUnconfirmed?'Inga obekräftade kandidater hittills.':'Inga bekräftade signaler hittills.';groupHolder.append(empty);}
+    if(!group.length){const empty=document.createElement('p');empty.className='note';empty.textContent=isUnconfirmed?'Inga obekräftade möjligheter hittills.':'Inga bekräftade möjligheter hittills.';groupHolder.append(empty);}
     for(const x of group.sort((a,b)=>String(a.ticker).localeCompare(String(b.ticker)))){
     const div=document.createElement('div');div.className='item';
     const title=document.createElement('strong');title.textContent=(x.name||x.ticker)+' ('+x.ticker+')';
