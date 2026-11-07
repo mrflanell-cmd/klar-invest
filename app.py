@@ -72,6 +72,42 @@ def get_json_with_retries(url, params):
                 time.sleep(attempt + 1)
     raise last_error
 
+def first_north_sweden_universe():
+    """Best-effort live Nasdaq First North Sweden discovery, never guess country."""
+    items = []
+    errors = []
+    url = "https://api.nasdaq.com/api/nordic/screener/shares"
+    headers = {"User-Agent":"Mozilla/5.0", "Accept":"application/json"}
+    for page in range(1, 11):
+        try:
+            r = requests.get(url, params={"category":"FIRST_NORTH","tableonly":"true",
+                             "page":page,"size":100,"lang":"en"},headers=headers,timeout=18)
+            r.raise_for_status()
+            data = r.json().get("data") or {}
+            listing = data.get("instrumentListing") or {}
+            rows = listing.get("rows") or []
+            if not isinstance(rows,list):raise ValueError("Okänt Nasdaq-format")
+            if not rows:break
+            for row in rows:
+                if not isinstance(row,dict):continue
+                country = " ".join(str(row.get(k) or "") for k in
+                    ("market","marketName","marketSegment","marketSegmentName",
+                     "exchange","exchangeName","country","countryName"))
+                # Other Nordic First North listings must never be treated as Swedish.
+                if not any(tag in country.lower() for tag in ("sweden","stockholm","first north sweden")):
+                    continue
+                t = str(row.get("symbol") or row.get("ticker") or "").strip().upper()
+                if not re.fullmatch(r"[A-Z0-9._ -]{1,24}",t):continue
+                symbol = t.replace(" ","-").replace("_","-").replace(".","-")+".ST"
+                items.append({"ticker":t,"symbol":symbol,
+                              "name":str(row.get("name") or row.get("companyName") or t),
+                              "exchange":"FIRST_NORTH"})
+            if len(rows)<100:break
+        except (requests.RequestException,ValueError,TypeError) as exc:
+            errors.append(str(exc)[:90])
+            break
+    return items, errors
+
 def universe(market):
     if market == "COM":
         return commodity_universe("all")
@@ -138,9 +174,18 @@ def universe(market):
             pass
     if not items:
         raise ValueError("Kunde inte hämta någon aktielista. Försök igen senare.")
-    note = ("Automatiskt hämtad OMXSTO- och NGM-lista (inklusive vissa tillväxtbolag); First North/Spotlight och fullständig täckning är INTE verifierade. Yahoo-kursdata kan saknas för NGM."
+    # Augment with Nasdaq's live First North listings when the feed identifies Sweden.
+    first_north, fn_errors = first_north_sweden_universe()
+    existing = {item["symbol"] for item in items}
+    for item in first_north:
+        if item["symbol"] not in existing:
+            items.append(item)
+            existing.add(item["symbol"])
+    if fn_errors or not first_north:
+        error_text += " First North kunde inte verifieras via Nasdaq-flödet."
+    note = ("Automatiskt hämtad OMXSTO- och NGM-lista (inklusive vissa tillväxtbolag); First North hämtas från Nasdaq när svensk marknad kan verifieras; Spotlight och fullständig täckning är INTE verifierade. Yahoo-kursdata kan saknas för NGM."
             if full else "BEGRÄNSAD TÄCKNING (OMXSTO/NGM): " + (error_text or "Aktielistan är ofullständig."))
-    return list({item["ticker"]:item for item in items}.values()), note
+    return list({item["symbol"]:item for item in items}.values()), note + " First North-tillägg: " + str(len(first_north)) + " instrument. " + error_text
 
 def history(item,market):
     url="https://query1.finance.yahoo.com/v8/finance/chart/"+requests.utils.quote(item["symbol"],safe="")
