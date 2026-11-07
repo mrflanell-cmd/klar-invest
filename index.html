@@ -248,7 +248,12 @@ function renderResults(s){
     p.textContent='Inga träffar i den del av marknaden som kunnat kontrolleras.';
     holder.append(p);
   }
-  for(const x of [...results].sort((a,b)=>String(a.status).localeCompare(String(b.status)))){
+  const confirmed=results.filter(x=>x.status==='BEKRÄFTAD');
+  const unconfirmed=results.filter(x=>x.status!=='BEKRÄFTAD');
+  for(const [label,group] of [['✅ Bekräftade signaler',confirmed],['⏳ Obekräftade kandidater – EJ KÖP',unconfirmed]]){
+    const heading=document.createElement('h3');heading.textContent=label+' ('+group.length+')';holder.append(heading);
+    if(!group.length){const empty=document.createElement('p');empty.className='note';empty.textContent=label.startsWith('✅')?'Inga bekräftade signaler hittills.':'Inga obekräftade kandidater hittills.';holder.append(empty);}
+    for(const x of group.sort((a,b)=>String(a.ticker).localeCompare(String(b.ticker)))){
     const div=document.createElement('div');div.className='item';
     const title=document.createElement('strong');title.textContent=(x.name||x.ticker)+' ('+x.ticker+')';
     const status=document.createElement('p');
@@ -269,6 +274,7 @@ function renderResults(s){
       Number(x.entry).toLocaleString('sv-SE',{maximumFractionDigits:4})+' '+unit;
     const a=document.createElement('a');a.href=x.tv;a.target='_blank';a.rel='noopener';a.textContent='Öppna TradingView';
     div.append(title,status,price,entry,a);holder.append(div);
+    }
   }
   if(errors.length){
     const d=document.createElement('details');const sum=document.createElement('summary');
