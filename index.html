@@ -82,7 +82,7 @@ function paintTip(){
 function paintDaily(){
  const t=WISDOM[showingDailyIndex%WISDOM.length];
  $('wisdom-date').textContent=(showingToday?'Dagens datum · ':'Ur citatsamlingen · ')+wisdomDateLabel();
- $('wisdom-quote').textContent='“'+t.q+'”';
+ $('wisdom-quote').textContent='“'+wisdomQuote(t)+'”';
  $('wisdom-author').textContent=t.author;
  $('wisdom-reflection').textContent=wisdomReflection(t);
 }
