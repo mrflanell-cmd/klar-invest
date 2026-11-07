@@ -526,7 +526,7 @@ updateControls();
  ['04 · EXECUTE — Köp','Efter bekräftelse förbereds en limitköporder på dag 1:s öppningskurs. Vi jagar inte priset.'],
  ['05 · SKYDDA KAPITALET','Stop loss vid dag 2:s lägsta kurs. Antal aktier beräknas med maxrisk och max positionsstorlek.'],
  ['06 · EXIT','2R är målnivån. Följ vår stängningsbaserade exitplan; gap och slippage kan ge större förlust än planerat.']
- ],note:'Viktigt: Scannern kontrollerar i dagsläget inte alla delar av den fullständiga regelboken, bland annat inte 6-ljus HL-filtret. Resultat måste därför granskas manuellt i TradingView.'},
+ ],note:'6-ljusfiltret ingår inte i strategin. Granska alltid formation, bekräftelse och risk i TradingView före köp.'},
  engulfing:{title:'Bullish Engulfing',badge:'2 ljus · 1D',intro:'En enklare ljusformation. Inte samma bekräftelse- och entryregler som Three Candle Method.',steps:[['01 · Första ljuset','Ett rött ljus.'],['02 · Andra ljuset','Ett grönt ljus öppnar under det röda ljusets stängning och stänger över dess öppning.'],['03 · Granska','Scannern visar mönsterträff. Granska trend, nivåer och risk i TradingView före eventuell order.']],note:'Mönsterträff är inte en färdig köporder. Riskplan och bekräftelse behöver bedömas separat.'},
  hammer:{title:'Hammer',badge:'1 ljus · 1D',intro:'Sök efter ett ljus med liten kropp och lång nedre veke.',steps:[['01 · Ljusets kropp','Ljusets kropp är positivt stor och relativt liten jämfört med nedre veken.'],['02 · Nedre veke','Nedre veken är minst dubbelt så lång som kroppen. Övre veken är högst en kroppslängd.'],['03 · Granska','Kontrollera trend, prisnivåer och bekräftelse innan du planerar någon order.']],note:'Scannern hittar formen, men ingen komplett separat köpstrategi är fastställd för Hammer.'}
  };
