@@ -177,9 +177,9 @@ def detect(bars,pattern,low,high):
     a,b,c=bars[-3:]
     if not low<=b["close"]<=high:return None
     def pierce(x,y):
-        return x["close"]<x["open"] and y["close"]>y["open"] and y["open"]<x["close"] and x["close"]<y["close"]<x["open"]
+        return x["close"]<x["open"] and y["close"]>y["open"] and y["open"]<x["close"] and y["close"]>x["close"]
     if pattern=="piercing":
-        confirmed=pierce(a,b) and c["close"]>a["open"]
+        confirmed=pierce(a,b) and c["close"]>c["open"] and c["close"]>a["open"]
         waiting=pierce(b,c)
         if not confirmed and not waiting:return None
         status="BEKRÄFTAD" if confirmed else "OBEKRÄFTAD – EJ KÖP"
