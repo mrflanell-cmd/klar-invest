@@ -412,9 +412,9 @@ function renderResults(s){
       const a=document.createElement('a');a.href=x.tv;a.target='_blank';a.rel='noopener';a.textContent='📈 TradingView';links.append(a);
     }
     if(unit==='SEK' && x.ticker){
-      const av=document.createElement('a');av.textContent='⏳ Hittar aktiens direktsida på Avanza…';
+      const av=document.createElement('a');av.textContent='⏳ Avanza – söker direktlänk';
       av.setAttribute('aria-busy','true');links.append(av);
-      fetch('/api/avanza-stock?ticker='+encodeURIComponent(x.ticker)+'&name='+encodeURIComponent(x.name||''))
+      fetch('/api/avanza-stock?ticker='+encodeURIComponent(x.ticker)+'&name='+encodeURIComponent(x.name||''),{signal:AbortSignal.timeout(9000)})
         .then(r=>{if(!r.ok)throw Error('Avanza');return r.json()})
         .then(result=>{
           av.removeAttribute('aria-busy');
@@ -422,16 +422,17 @@ function renderResults(s){
             av.href=result.url;av.target='_blank';av.rel='noopener';
             av.textContent='🛒 Avanza – KÖP';
           }else{
-            av.textContent='⚠️ Avanza-direktlänk kunde inte verifieras';
-            const note=document.createElement('small');note.textContent='Ingen säker matchning för '+x.ticker+'. Vi länkar inte till fel aktie.';links.append(note);
+            av.href='https://www.avanza.se/sok.html?query='+encodeURIComponent(x.name||x.ticker);
+            av.target='_blank';av.rel='noopener';av.textContent='🔎 Sök på Avanza';
+            const note=document.createElement('small');note.textContent='Direktlänk ej verifierad – kontrollera aktien innan köp.';links.append(note);
           }
-        }).catch(()=>{av.removeAttribute('aria-busy');av.textContent='⚠️ Avanza är tillfälligt otillgängligt';});
+        }).catch(()=>{av.removeAttribute('aria-busy');av.href='https://www.avanza.se/sok.html?query='+encodeURIComponent(x.name||x.ticker);av.target='_blank';av.rel='noopener';av.textContent='🔎 Sök på Avanza';});
     }
     if(links.children.length){
       const orderSummary=div.querySelector('.ki-order-compact');
       if(orderSummary){orderSummary.insertAdjacentElement('afterend',links)}else{div.append(links)}
     }
-    if(x.strategy==='hidden_gate'){const note=document.createElement('p');note.className='note';note.textContent='CRT-inspirerad prototyp, inte verifierad Flux Charts FVG/OB. Granska signal och prisnivåer före handel.';div.append(note);}
+    if(x.strategy==='hidden_gate' && !hasPlan){const note=document.createElement('p');note.className='note';note.textContent='CRT-inspirerad prototyp, inte verifierad Flux Charts FVG/OB. Granska signal och prisnivåer före handel.';div.append(note);}
     groupHolder.append(div);
     }
   }
