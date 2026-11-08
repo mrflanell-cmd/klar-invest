@@ -7,7 +7,10 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
 
+from community_auth import router as community_router
+
 app=FastAPI(title="KLAR INVEST")
+app.include_router(community_router)
 JOBS={}
 TZ=ZoneInfo("Europe/Stockholm")
 class ScanOptions(BaseModel):
@@ -386,6 +389,10 @@ def community_page():
 @app.get("/avanza", response_class=HTMLResponse)
 def avanza_dashboard():
     return Path("avanza.html").read_text(encoding="utf-8")
+
+@app.get("/community-avatars.js")
+def community_avatars_js():
+    return FileResponse("community-avatars.js",media_type="application/javascript",headers={"Cache-Control":"public, max-age=3600"})
 
 @app.get("/avanza.js")
 def avanza_js():
