@@ -390,6 +390,10 @@ def community_page():
 def avanza_dashboard():
     return Path("avanza.html").read_text(encoding="utf-8")
 
+@app.get("/community-avatars.js")
+def community_avatars_js():
+    return FileResponse("community-avatars.js",media_type="application/javascript",headers={"Cache-Control":"public, max-age=3600"})
+
 @app.get("/avanza.js")
 def avanza_js():
     return FileResponse("avanza.js",media_type="application/javascript",headers={"Cache-Control":"no-store"})
