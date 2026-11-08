@@ -7,7 +7,10 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
 
+from community_auth import router as community_router
+
 app=FastAPI(title="KLAR INVEST")
+app.include_router(community_router)
 JOBS={}
 TZ=ZoneInfo("Europe/Stockholm")
 class ScanOptions(BaseModel):
