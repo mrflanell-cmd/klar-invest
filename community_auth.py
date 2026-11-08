@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 router = APIRouter(prefix="/api/community")
 DB_PATH = os.getenv("COMMUNITY_DB_PATH", "/tmp/klar-community.sqlite3")
 COOKIE_SECURE = os.getenv("COMMUNITY_COOKIE_SECURE", "true").lower() == "true"
-AVATARS = ("viking", "owl", "fox", "bear", "wolf", "eagle", "shield", "star")
+AVATARS = ("viking", "owl", "fox", "bear", "wolf", "eagle", "shield", "star", "bull_trader", "bear_trader", "candlestick", "diamond_hands", "trading_legend", "breakout_king")
 ATTEMPTS = {}
 LOCK = threading.Lock()
 
