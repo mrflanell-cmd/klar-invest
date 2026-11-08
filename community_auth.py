@@ -17,6 +17,7 @@ def connection():
     db.execute("PRAGMA busy_timeout=10000")
     db.execute("CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE COLLATE NOCASE, avatar TEXT NOT NULL, salt BLOB NOT NULL, password_hash BLOB NOT NULL, created_at INTEGER NOT NULL)")
     db.execute("CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, expires_at INTEGER NOT NULL)")
+    db.execute("CREATE TABLE IF NOT EXISTS online_presence (user_id TEXT PRIMARY KEY, last_seen INTEGER NOT NULL)")
     db.commit()
     return db
 
@@ -107,13 +108,35 @@ def login(data: Login, request: Request, response: Response):
         set_session(response, db, row[0])
         return {"user":{"id":row[0],"username":row[1],"avatar":row[2]}}
 
+@router.post("/heartbeat")
+def heartbeat(request: Request):
+    validate_origin(request)
+    with connection() as db:
+        user = current_user(request, db)
+        if not user:
+            raise HTTPException(401, "Logga in först.")
+        now = int(time.time())
+        db.execute("INSERT INTO online_presence(user_id,last_seen) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET last_seen=excluded.last_seen", (user["id"], now))
+        db.execute("DELETE FROM online_presence WHERE last_seen<?", (now-86400,))
+        db.commit()
+    return {"ok": True}
+
+@router.get("/online")
+def online():
+    with connection() as db:
+        count = db.execute("SELECT COUNT(*) FROM online_presence WHERE last_seen>=?", (int(time.time())-300,)).fetchone()[0]
+    return {"online": count, "window_seconds": 300}
+
 @router.post("/logout")
 def logout(request: Request, response: Response):
     validate_origin(request)
     token = request.cookies.get("klar_session", "")
     if token:
         with connection() as db:
+            user = current_user(request, db)
             db.execute("DELETE FROM sessions WHERE token_hash=?", (hashlib.sha256(token.encode()).hexdigest(),))
+            if user:
+                db.execute("DELETE FROM online_presence WHERE user_id=?", (user["id"],))
             db.commit()
     response.delete_cookie("klar_session", path="/")
     return {"ok":True}
