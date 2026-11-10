@@ -231,12 +231,12 @@ def detect(bars,pattern,low,high,stop_mode="green_low"):
         if len(bars)<200:return None
         sma200=sum(x["close"] for x in bars[-200:])/200
         closes7=[x["close"] for x in bars[-7:]]
-        if not (c["close"]>sma200 and c["close"]<=min(closes7)):return None
+        if not (c["close"]>sma200 and c["close"]<=min(closes7) and low<=c["close"]<=high):return None
         return {"status":"BEKRÄFTAD","date":c["date"],"stop":None,"strategy":"dd7",
             "sma200":round(sma200,4),"entry":round(c["close"],4),"last_close":round(c["close"],4),
             "last_close_date":c["date"],"bars":bars[-7:],
             "exit_rule":"Sälj vid stängning när Close är högsta Close av de senaste 7 sessionerna."}
-    if not low<=b["close"]<=high:return None
+    def price_ok(value):return low<=value<=high
     def pierce(x,y):
         return x["close"]<x["open"] and y["close"]>y["open"] and y["open"]<x["close"] and y["close"]>x["close"] and y["close"]<x["open"]
     if pattern in ("legend_turtle","legend_livermore","legend_raschke","legend_oneil"):
@@ -271,7 +271,7 @@ def detect(bars,pattern,low,high,stop_mode="green_low"):
             prior_low=min(x["low"] for x in bars[-22:-2])
             if not (b["low"]<prior_low and b["close"]>prior_low and c["close"]>b["high"]):return None
             entry=c["close"];stop=b["low"]
-        if stop<=0 or entry<=stop:return None
+        if stop<=0 or entry<=stop or not price_ok(entry):return None
         return {"status":"BEKRÄFTAD","date":c["date"],"stop":round(stop,4),"strategy":pattern,"sma200":None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
     if pattern=="hidden_gate":
         # KLAR INVEST prototype, NOT Flux Charts CRT/FVG/OB implementation.
@@ -298,12 +298,14 @@ def detect(bars,pattern,low,high,stop_mode="green_low"):
         if entry<=stop:return None
         status="BEKRÄFTAD"
     elif pattern=="piercing":
-        # Scanner finds ONLY the two-candle formation: red candle + qualifying green candle.
-        # The trader verifies any later confirmation manually in TradingView.
-        if not pierce(b,c):return None
-        status="MÖNSTERTRÄFF – GRANSKA I TRADINGVIEW"
-        entry=b["open"]
-        stop=c["open"] if stop_mode=="green_open" else c["low"]
+        # Three Candle Method:
+        # a = red candle, b = qualifying green recovery candle,
+        # c = confirmation candle of either colour closing above candle a open.
+        if not pierce(a,b):return None
+        if not c["close"]>a["open"]:return None
+        status="BEKRÄFTAD"
+        entry=a["open"]
+        stop=b["open"] if stop_mode=="green_open" else b["low"]
         if entry<=stop:return None
     elif pattern=="inside_bar":
         # Restored Green Inside Bar setup: candle c is green and fully inside mother candle b.
@@ -322,6 +324,8 @@ def detect(bars,pattern,low,high,stop_mode="green_low"):
         if not(body>0 and min(c["open"],c["close"])-c["low"]>=2*body and c["high"]-max(c["open"],c["close"])<=body):return None
         status="MÖNSTERTRÄFF";entry=c["open"]
     else:return None
+    # Price interval follows the strategy's actual planned entry/signal price.
+    if not price_ok(entry):return None
     return {"status":status,"date":c["date"],"stop":round(stop,4) if pattern in ("nova","hidden_gate","piercing","inside_bar") else round(b["low"],4),"strategy":pattern,"sma200":round(sma200,4) if pattern=="nova" else None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
 
 def do_scan(job_id,options):
@@ -555,7 +559,7 @@ def backtest(symbol:str,market:str="SE"):
 
 @app.post("/api/scan")
 def start(o:ScanOptions):
-    if o.market not in ("SE","US","COM") or o.pattern not in ("piercing","inside_bar","dd7","engulfing","hammer","nova","hidden_gate") or o.stop_mode not in ("green_low","green_open"):
+    if o.market not in ("SE","US","COM") or o.pattern not in ("piercing","inside_bar","dd7","engulfing","hammer","nova","hidden_gate","legend_livermore","legend_turtle","legend_oneil","legend_raschke") or o.stop_mode not in ("green_low","green_open"):
         return {"error":"Okända filter"}
     return {"job":new_job(o)}
 
