@@ -298,16 +298,12 @@ def detect(bars,pattern,low,high,stop_mode="green_low"):
         if entry<=stop:return None
         status="BEKRÄFTAD"
     elif pattern=="piercing":
-        confirmed=pierce(a,b) and c["close"]>a["open"]
-        waiting=pierce(b,c)
-        if not confirmed and not waiting:return None
-        status="BEKRÄFTAD" if confirmed else "OBEKRÄFTAD – EJ KÖP"
-        entry=a["open"] if confirmed else b["open"]
-        # User-selectable Three Candle stop: green candle open or its full low/wick.
-        if confirmed:
-            stop=b["open"] if stop_mode=="green_open" else b["low"]
-        else:
-            stop=c["open"] if stop_mode=="green_open" else c["low"]
+        # Scanner finds ONLY the two-candle formation: red candle + qualifying green candle.
+        # The trader verifies any later confirmation manually in TradingView.
+        if not pierce(b,c):return None
+        status="MÖNSTERTRÄFF – GRANSKA I TRADINGVIEW"
+        entry=b["open"]
+        stop=c["open"] if stop_mode=="green_open" else c["low"]
         if entry<=stop:return None
     elif pattern=="inside_bar":
         # Restored Green Inside Bar setup: candle c is green and fully inside mother candle b.
