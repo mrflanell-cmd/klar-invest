@@ -406,8 +406,23 @@ function renderResults(s){
     const stopNum=Number(x.stop);
     const fmt=n=>Number(n).toLocaleString('sv-SE',{maximumFractionDigits:4});
     const isConfirmed=x.status==='BEKRÄFTAD';
+    const isDD7=isConfirmed && x.strategy==='dd7' && Number.isFinite(entryNum) && entryNum>0;
     const hasPlan=isConfirmed && Number.isFinite(entryNum) && Number.isFinite(stopNum) && entryNum>stopNum && stopNum>0;
-    if(hasPlan){
+    if(isDD7){
+      const capital=Number($('risk-capital').value),maxPct=Number($('risk-position').value);
+      const budget=capital*maxPct/100;
+      const riskBox=document.createElement('div');riskBox.className='ki-risk-result ki-order-plan';
+      const header=document.createElement('strong');header.className='ki-order-plan-title';header.textContent='7️⃣ DD7 · POSITIONSPLAN';riskBox.append(header);
+      const stockLabel=document.createElement('p');stockLabel.className='ki-order-stock';stockLabel.textContent='📈 '+(x.name||x.ticker)+' ('+x.ticker+')';riskBox.append(stockLabel);
+      if(capital>0&&maxPct>0&&maxPct<=100&&unit==='SEK'){
+        const qty=Math.max(0,Math.floor(Math.min(budget/entryNum,capital/entryNum)));
+        const fields=[['🎯 SIGNAL / ENTRY',fmt(entryNum)+' kr'],['📦 ANTAL AKTIER',qty+' st'],['💰 KÖPBELOPP',fmt(qty*entryNum)+' kr'],['📊 POSITIONSBUDGET',fmt(budget)+' kr'],['🛑 STOP LOSS','Ingen fast SL'],['🚪 EXIT','Högsta Close på 7 dagar']];
+        const grid=document.createElement('div');grid.className='ki-order-plan-grid';
+        for(const [label,value] of fields){const cell=document.createElement('div');cell.className='ki-order-plan-cell';const l=document.createElement('span');l.textContent=label;const v=document.createElement('strong');v.textContent=value;cell.append(l,v);grid.append(cell);}riskBox.append(grid);
+        const note=document.createElement('p');note.className='ki-order-plan-note';note.textContent='DD7 använder positionsstorlek i stället för SL-baserad risk. Ingen fast 150 kr-förlust och inget 2R-mål används.';riskBox.append(note);
+      }
+      div.append(riskBox);
+    }else if(hasPlan){
       const capital=Number($('risk-capital').value),maxLoss=Number($('risk-loss').value),maxPct=Number($('risk-position').value);
       const perShare=entryNum-stopNum;
       const validRisk=capital>0 && maxLoss>0 && maxPct>0 && maxPct<=100;
