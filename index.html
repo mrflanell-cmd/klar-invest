@@ -788,7 +788,7 @@ updateControls();
  ['04 · EXECUTE — Köp','Efter bekräftelse förbereds en limitköporder på dag 1:s öppningskurs. Vi jagar inte priset.'],
  ['05 · SKYDDA KAPITALET','Du väljer SL: dag 2:s öppning eller dag 2:s Low/nedersta veke. Valet styr risk, antal aktier och 2R.'],
  ['06 · EXIT','2R är målnivån. Följ vår stängningsbaserade exitplan; gap och slippage kan ge större förlust än planerat.']
- ],note:'6-ljusfiltret ingår inte i strategin. Granska alltid formation, bekräftelse och risk i TradingView före köp.'},
+ ],note:'Granska alltid formation, bekräftelse och risk i TradingView före köp.'},
  hidden_gate:{title:'🌙 THE HIDDEN GATE · prototyp',badge:'3 ljus · CRT-inspirerad',intro:'Egen, experimentell CRT-inspirerad modell. INTE samma sak som Flux Charts FVG/Order Block-kod. Testa och verifiera innan handel.',steps:[['01 · PORTEN','Dag 1 bildar referensintervallet.'],['02 · FALSKT BROTT','Dag 2 går under dag 1:s lägsta men stänger tillbaka ovanför den nivån.'],['03 · BEKRÄFTELSE','Dag 3 stänger över dag 2:s högsta.'],['04 · ENTRY','Limitkurs för nästa handelsdag är dag 3:s stängning. Ingen jakt vid högre öppning.'],['05 · SKYDD','SL vid dag 2:s lägsta; 2R-mål och antal aktier beräknas från vald maxrisk och maxposition.']],note:'Detta är en egen förenklad prototyp, inte verifierad mot Flux Charts original. Inga order skickas automatiskt.'},
  nova:{title:'✨ NOVA — The First Light · v1.0',badge:'3 ljus · SMA 200',intro:'En separat experimentell strategi med låsta scannerregler. Den är inte testad för lönsamhet. Alla signaler beräknas på stängda dagsljus.',steps:[
  ['01 · TREND','Dag 3:s stängningskurs måste ligga över SMA 200 (medelvärdet av de senaste 200 stängningskurserna).'],
