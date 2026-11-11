@@ -286,16 +286,17 @@ def detect(bars,pattern,low,high,stop_mode="green_low"):
         if entry<=stop:return None
         status="BEKRÄFTAD"
     elif pattern=="piercing":
+        # Original working Three Candle scan:
+        # a,b,c are ONLY the latest three completed daily candles.
+        # Confirmed = red a + qualifying green b + c closes above a.open.
+        # c may be red or green. No older candle can confirm this setup.
         confirmed=pierce(a,b) and c["close"]>a["open"]
         waiting=pierce(b,c)
         if not confirmed and not waiting:return None
         status="BEKRÄFTAD" if confirmed else "OBEKRÄFTAD – EJ KÖP"
         entry=a["open"] if confirmed else b["open"]
-        # User-selectable Three Candle stop: green candle open or its full low/wick.
-        if confirmed:
-            stop=b["open"] if stop_mode=="green_open" else b["low"]
-        else:
-            stop=c["open"] if stop_mode=="green_open" else c["low"]
+        green=b if confirmed else c
+        stop=green["open"] if stop_mode=="green_open" else green["low"]
         if entry<=stop:return None
     elif pattern=="inside_bar":
         # Restored Green Inside Bar setup: candle c is green and fully inside mother candle b.
