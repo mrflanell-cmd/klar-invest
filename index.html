@@ -364,7 +364,7 @@ function renderResults(s){
     caption.textContent='✦ STRATEGIN SOM SKANNAS';
     holder.append(caption,art);
   }
-  for(const [label,group] of [['✅ Bekräftade möjligheter',confirmed],['⏳ Obekräftade möjligheter – EJ KÖP',unconfirmed]]){
+  for(const [label,group] of [['✅ Bekräftade möjligheter',confirmed]]){
     const isUnconfirmed=label.startsWith('⏳');
     const fold=document.createElement('details');
     fold.className='ki-unconfirmed-fold ki-opportunity-fold';
