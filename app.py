@@ -286,10 +286,9 @@ def detect(bars,pattern,low,high):
         status="BEKRÄFTAD"
     elif pattern=="piercing":
         confirmed=pierce(a,b) and c["close"]>a["open"]
-        waiting=pierce(b,c)
-        if not confirmed and not waiting:return None
-        status="BEKRÄFTAD" if confirmed else "OBEKRÄFTAD – EJ KÖP"
-        entry=a["open"] if confirmed else b["open"]
+        if not confirmed:return None
+        status="BEKRÄFTAD"
+        entry=a["open"]
     elif pattern=="engulfing":
         if not (b["close"]<b["open"] and c["close"]>c["open"] and c["open"]<b["close"] and c["close"]>b["open"]):return None
         status="MÖNSTERTRÄFF";entry=b["open"]
