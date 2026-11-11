@@ -285,7 +285,26 @@ def detect(bars,pattern,low,high):
         if entry<=stop:return None
         status="BEKRÄFTAD"
     elif pattern=="piercing":
-        confirmed=pierce(a,b) and c["close"]>a["open"]
+        # LOCKED THREE CANDLE RULE:
+        # a = Ljus 3 (tredje senaste), b = Ljus 2 (näst senaste), c = Ljus 1 (senaste).
+        # Ljus 3: rött.
+        # Ljus 2: grönt, öppnar under Ljus 3 Close, stänger över Ljus 3 Close
+        #          men under Ljus 3 Open.
+        # Ljus 1: färg spelar ingen roll, stänger över Ljus 3 Open.
+        candle3_red = a["close"] < a["open"]
+        candle2_green = b["close"] > b["open"]
+        candle2_opens_below_candle3_close = b["open"] < a["close"]
+        candle2_closes_above_candle3_close = b["close"] > a["close"]
+        candle2_closes_below_candle3_open = b["close"] < a["open"]
+        candle1_confirms = c["close"] > a["open"]
+        confirmed = (
+            candle3_red
+            and candle2_green
+            and candle2_opens_below_candle3_close
+            and candle2_closes_above_candle3_close
+            and candle2_closes_below_candle3_open
+            and candle1_confirms
+        )
         if not confirmed:return None
         status="BEKRÄFTAD"
         entry=a["open"]
