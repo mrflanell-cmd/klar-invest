@@ -586,7 +586,7 @@ def backtest(symbol:str,market:str="SE"):
 
 @app.post("/api/scan")
 def start(o:ScanOptions):
-    if o.market not in ("SE","US","COM") or o.pattern not in ("piercing","engulfing","hammer","nova","hidden_gate"):
+    if o.market not in ("SE","US","COM") or o.pattern not in ("piercing","engulfing","hammer","nova","hidden_gate","available_method"):
         return {"error":"Okända filter"}
     return {"job":new_job(o)}
 
