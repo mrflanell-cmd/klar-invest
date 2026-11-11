@@ -298,13 +298,21 @@ def detect(bars,pattern,low,high,stop_mode="green_low"):
         if entry<=stop:return None
         status="BEKRÄFTAD"
     elif pattern=="piercing":
-        # EXACT THREE-CANDLE WINDOW: a,b,c are bars[-3:], the latest 3 completed daily candles.
-        # a (two sessions back) must be red.
-        # b (one session back) must be the qualifying green piercing candle.
-        # c (latest completed session) may be red or green, but MUST close above a.open.
-        # No waiting candidates, no older setup, no fourth/continuation candle.
-        if not pierce(a,b):return None
-        if not c["close"]>a["open"]:return None
+        # THREE CANDLE METHOD — ONLY bars[-3:], never an older setup.
+        # Candle 1 (third latest): RED.
+        # Candle 2 (second latest): GREEN; opens below candle 1 close,
+        # closes above candle 1 close, but below candle 1 open.
+        # Candle 3 (latest completed): RED OR GREEN; color is irrelevant.
+        # Its close MUST be above candle 1 open.
+        candle1_red = a["close"] < a["open"]
+        candle2_piercing = (
+            b["close"] > b["open"]
+            and b["open"] < a["close"]
+            and b["close"] > a["close"]
+            and b["close"] < a["open"]
+        )
+        candle3_confirms = c["close"] > a["open"]
+        if not (candle1_red and candle2_piercing and candle3_confirms):return None
         status="BEKRÄFTAD"
         entry=a["open"]
         stop=b["open"] if stop_mode=="green_open" else b["low"]
