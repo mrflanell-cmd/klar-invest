@@ -198,7 +198,8 @@ $('lang-en').addEventListener('click',()=>chooseWisdomLanguage('en'));
 applyWisdomLanguage();
 
 
-const JOB_KEY="klarInvestActiveScanV2";
+const SCANNER_RULE_VERSION="three-candle-exact-latest-3-v1";
+const JOB_KEY="klarInvestActiveScanV3";
 const HISTORY_KEY="klarInvestSavedHistoryV1";
 const MAX_HISTORY=8;
 let activeJob=null, activeOptions=null, pollingTimer=null, refreshBusy=false, networkFails=0, pausedEntry=null, requestedPause=false;
@@ -254,6 +255,7 @@ function saveSnapshot(s,jobId,opts){
     created:previous?.created||new Date().toISOString(),
     updated:new Date().toISOString(),
     options:opts||previous?.options||null,
+    rule_version:SCANNER_RULE_VERSION,
     data:{
       state:s.state||'running',
       total:Number(s.total)||0,
@@ -633,6 +635,8 @@ async function refresh(){
 }
 function checkpointFromEntry(entry){
   if(!entry?.data)return null;
+  // Never reuse scan results produced by an older strategy-rule version.
+  if(entry.rule_version!==SCANNER_RULE_VERSION)return null;
   const d=entry.data;
   if(!Array.isArray(d.items)||!d.items.length||!Array.isArray(d.completed_symbols)){
     return null;
