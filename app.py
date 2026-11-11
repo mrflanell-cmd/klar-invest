@@ -296,6 +296,22 @@ def detect(bars,pattern,low,high):
         stop=min(a["low"],b["low"],c["low"])
         if entry<=stop:return None
         status="BEKRÄFTAD"
+    elif pattern=="available_method":
+        # TILLGÄNGLIG METOD — separate from Piercing Line.
+        # a: red. b: green, opens below a close and closes above a close.
+        # c: latest closed candle confirms by closing above a open.
+        confirmed = (
+            a["close"] < a["open"]
+            and b["close"] > b["open"]
+            and b["open"] < a["close"]
+            and b["close"] > a["close"]
+            and c["close"] > a["open"]
+        )
+        if not confirmed:return None
+        status="BEKRÄFTAD"
+        entry=a["open"]
+        stop=b["low"]
+        if entry<=stop:return None
     elif pattern=="piercing":
         # LOCKED THREE CANDLE RULE:
         # a = Ljus 3 (tredje senaste), b = Ljus 2 (näst senaste), c = Ljus 1 (senaste).
@@ -337,7 +353,7 @@ def detect(bars,pattern,low,high):
         if not(body>0 and min(c["open"],c["close"])-c["low"]>=2*body and c["high"]-max(c["open"],c["close"])<=body):return None
         status="MÖNSTERTRÄFF";entry=c["open"]
     else:return None
-    return {"status":status,"date":c["date"],"stop":round(stop,4) if pattern in ("nova","hidden_gate","piercing","inside_bar") else round(b["low"],4),"strategy":pattern,"sma200":round(sma200,4) if pattern=="nova" else None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
+    return {"status":status,"date":c["date"],"stop":round(stop,4) if pattern in ("nova","hidden_gate","piercing","inside_bar","available_method") else round(b["low"],4),"strategy":pattern,"sma200":round(sma200,4) if pattern=="nova" else None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
 
 def do_scan(job_id,options):
     job=JOBS[job_id]
