@@ -305,6 +305,7 @@ def detect(bars,pattern,low,high):
             and b["close"] > b["open"]
             and b["open"] < a["close"]
             and b["close"] > a["close"]
+            and b["close"] < a["open"]
             and c["close"] > a["open"]
         )
         if not confirmed:return None
