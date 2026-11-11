@@ -220,16 +220,6 @@ def history(item,market,period=None):
             continue
         bars.append({"date":str(date),"open":o,"high":h,"low":l,"close":c})
     if len(bars)<3:raise ValueError("Otillräckliga dagskurser")
-    # Never let a stale Swedish daily series masquerade as the latest Three Candle setup.
-    # Before today's close, the latest completed session is the previous weekday;
-    # after the close, it is today (weekends roll back to Friday).
-    if market=="SE":
-        expected=now.date() if now.time()>=close_time else now.date()-dt.timedelta(days=1)
-        while expected.weekday()>=5:
-            expected-=dt.timedelta(days=1)
-        latest=dt.date.fromisoformat(bars[-1]["date"])
-        if latest<expected:
-            raise ValueError("Kursdata är för gammal: senaste bar "+str(latest)+", väntad "+str(expected))
     return bars
 
 def detect(bars,pattern,low,high,stop_mode="green_low"):
