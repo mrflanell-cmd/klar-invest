@@ -19,7 +19,6 @@ class ScanOptions(BaseModel):
     min_price:float=10
     max_price:float=800
     commodity_group:str="all"
-    stop_mode:str="green_low"
     checkpoint:dict|None=None
 
 # Curated exchange-traded futures universe. Price quotation units differ by contract.
@@ -222,7 +221,7 @@ def history(item,market,period=None):
     if len(bars)<3:raise ValueError("Otillräckliga dagskurser")
     return bars
 
-def detect(bars,pattern,low,high,stop_mode="green_low"):
+def detect(bars,pattern,low,high):
     a,b,c=bars[-3:]
     if not low<=b["close"]<=high:return None
     def pierce(x,y):
@@ -286,27 +285,11 @@ def detect(bars,pattern,low,high,stop_mode="green_low"):
         if entry<=stop:return None
         status="BEKRÄFTAD"
     elif pattern=="piercing":
-        # Original working Three Candle scan:
-        # a,b,c are ONLY the latest three completed daily candles.
-        # Confirmed = red a + qualifying green b + c closes above a.open.
-        # c may be red or green. No older candle can confirm this setup.
         confirmed=pierce(a,b) and c["close"]>a["open"]
         waiting=pierce(b,c)
         if not confirmed and not waiting:return None
         status="BEKRÄFTAD" if confirmed else "OBEKRÄFTAD – EJ KÖP"
         entry=a["open"] if confirmed else b["open"]
-        green=b if confirmed else c
-        stop=green["open"] if stop_mode=="green_open" else green["low"]
-        if entry<=stop:return None
-    elif pattern=="inside_bar":
-        # Restored Green Inside Bar setup: candle c is green and fully inside mother candle b.
-        # Entry is the direct upside breakout level; initial protection is the Inside Bar low.
-        inside=c["high"]<b["high"] and c["low"]>b["low"]
-        if not (inside and c["close"]>c["open"]):return None
-        entry=c["high"]
-        stop=c["low"]
-        if entry<=stop:return None
-        status="BEKRÄFTAD"
     elif pattern=="engulfing":
         if not (b["close"]<b["open"] and c["close"]>c["open"] and c["open"]<b["close"] and c["close"]>b["open"]):return None
         status="MÖNSTERTRÄFF";entry=b["open"]
@@ -315,7 +298,7 @@ def detect(bars,pattern,low,high,stop_mode="green_low"):
         if not(body>0 and min(c["open"],c["close"])-c["low"]>=2*body and c["high"]-max(c["open"],c["close"])<=body):return None
         status="MÖNSTERTRÄFF";entry=c["open"]
     else:return None
-    return {"status":status,"date":c["date"],"stop":round(stop,4) if pattern in ("nova","hidden_gate","piercing","inside_bar") else round(b["low"],4),"strategy":pattern,"sma200":round(sma200,4) if pattern=="nova" else None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
+    return {"status":status,"date":c["date"],"stop":round(stop,4) if pattern in ("nova","hidden_gate") else round(b["low"],4),"strategy":pattern,"sma200":round(sma200,4) if pattern=="nova" else None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
 
 def do_scan(job_id,options):
     job=JOBS[job_id]
@@ -333,7 +316,7 @@ def do_scan(job_id,options):
                 bars=history({**item,"nova":options.pattern=="nova"},options.market)
                 lo=0 if options.market=="COM" else options.min_price
                 hi=1e12 if options.market=="COM" else options.max_price
-                return item,detect(bars,options.pattern,lo,hi,options.stop_mode),None
+                return item,detect(bars,options.pattern,lo,hi),None
             except Exception as exc:
                 return item,None,str(exc)[:100]
         with ThreadPoolExecutor(max_workers=5) as pool:
@@ -477,16 +460,13 @@ def backtest(symbol:str,market:str="SE"):
         cached=BACKTEST_CACHE.get(key)
         if cached and time.time()-cached[0]<86400:return cached[1]
     try:
-        yahoo_symbol=symbol
-        if market=="SE" and not yahoo_symbol.upper().endswith(".ST"):
-            yahoo_symbol=yahoo_symbol.replace("_","-").replace(".","-")+".ST"
-        bars=history({"symbol":yahoo_symbol},market,"5y")
-        strategies=("piercing","inside_bar","hidden_gate","nova")
+        bars=history({"symbol":symbol},market,"5y")
+        strategies=("piercing","hidden_gate","nova")
         board=[]
         for strategy in strategies:
             trades=[];unfilled=0;ambiguous=0
             for i in range(205,len(bars)-1):
-                signal=detect(bars[:i+1],strategy,0,1e12,"green_low")
+                signal=detect(bars[:i+1],strategy,0,1e12)
                 if not signal or signal.get("status")!="BEKRÄFTAD":continue
                 entry=float(signal["entry"]);stop=float(signal["stop"])
                 risk=entry-stop
@@ -524,7 +504,7 @@ def backtest(symbol:str,market:str="SE"):
 
 @app.post("/api/scan")
 def start(o:ScanOptions):
-    if o.market not in ("SE","US","COM") or o.pattern not in ("piercing","inside_bar","engulfing","hammer","nova","hidden_gate") or o.stop_mode not in ("green_low","green_open"):
+    if o.market not in ("SE","US","COM") or o.pattern not in ("piercing","engulfing","hammer","nova","hidden_gate"):
         return {"error":"Okända filter"}
     return {"job":new_job(o)}
 
