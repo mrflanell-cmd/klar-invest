@@ -223,7 +223,7 @@ def history(item,market,period=None):
 
 def detect(bars,pattern,low,high):
     a,b,c=bars[-3:]
-    if not low<=b["close"]<=high:return None
+    if not low<=c["close"]<=high:return None
     def pierce(x,y):
         return x["close"]<x["open"] and y["close"]>y["open"] and y["open"]<x["close"] and y["close"]>x["close"] and y["close"]<x["open"]
     if pattern in ("legend_turtle","legend_livermore","legend_raschke","legend_oneil"):
@@ -284,12 +284,17 @@ def detect(bars,pattern,low,high):
         stop=min(a["low"],b["low"],c["low"])
         if entry<=stop:return None
         status="BEKRÄFTAD"
-    elif pattern=="piercing":
-        confirmed=pierce(a,b) and c["close"]>a["open"]
-        waiting=pierce(b,c)
-        if not confirmed and not waiting:return None
-        status="BEKRÄFTAD" if confirmed else "OBEKRÄFTAD – EJ KÖP"
-        entry=a["open"] if confirmed else b["open"]
+    elif pattern in ("piercing","piercing_classic","piercing_mild"):
+        # Only confirmed three-candle signals; no unconfirmed buy candidates.
+        if not (pierce(a,b) and c["close"]>a["open"]):return None
+        midpoint=(a["open"]+a["close"])/2
+        variant="classic" if b["close"]>midpoint else "mild"
+        if pattern=="piercing_classic" and variant!="classic":return None
+        if pattern=="piercing_mild" and variant!="mild":return None
+        status="BEKRÄFTAD"
+        entry=a["open"]
+        stop=b["low"]
+        if stop>=entry:return None
     elif pattern=="engulfing":
         if not (b["close"]<b["open"] and c["close"]>c["open"] and c["open"]<b["close"] and c["close"]>b["open"]):return None
         status="MÖNSTERTRÄFF";entry=b["open"]
@@ -298,7 +303,7 @@ def detect(bars,pattern,low,high):
         if not(body>0 and min(c["open"],c["close"])-c["low"]>=2*body and c["high"]-max(c["open"],c["close"])<=body):return None
         status="MÖNSTERTRÄFF";entry=c["open"]
     else:return None
-    return {"status":status,"date":c["date"],"stop":round(stop,4) if pattern in ("nova","hidden_gate") else round(b["low"],4),"strategy":pattern,"sma200":round(sma200,4) if pattern=="nova" else None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
+    return {"status":status,"date":c["date"],"variant":(variant if pattern in ("piercing","piercing_classic","piercing_mild") else None),"stop":round(stop,4) if pattern in ("nova","hidden_gate","piercing","piercing_classic","piercing_mild") else round(b["low"],4),"strategy":pattern,"sma200":round(sma200,4) if pattern=="nova" else None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
 
 def do_scan(job_id,options):
     job=JOBS[job_id]
@@ -504,7 +509,7 @@ def backtest(symbol:str,market:str="SE"):
 
 @app.post("/api/scan")
 def start(o:ScanOptions):
-    if o.market not in ("SE","US","COM") or o.pattern not in ("piercing","engulfing","hammer","nova","hidden_gate"):
+    if o.market not in ("SE","US","COM") or o.pattern not in ("piercing","piercing_classic","piercing_mild","engulfing","hammer","nova","hidden_gate"):
         return {"error":"Okända filter"}
     return {"job":new_job(o)}
 
