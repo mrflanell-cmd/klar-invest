@@ -223,6 +223,18 @@ def history(item,market,period=None):
 
 def detect(bars,pattern,low,high):
     a,b,c=bars[-3:]
+    if pattern=="dd7":
+        # Original Double Seven: daily closes only. Trend filter Close > SMA200.
+        # Entry signal: current Close is the lowest Close of current + previous 6 sessions.
+        # Original exit is a rolling 7-session highest Close; no fixed SL/TP.
+        if len(bars)<200:return None
+        sma200=sum(x["close"] for x in bars[-200:])/200
+        closes7=[x["close"] for x in bars[-7:]]
+        if not (c["close"]>sma200 and c["close"]<=min(closes7)):return None
+        return {"status":"BEKRÄFTAD","date":c["date"],"stop":None,"strategy":"dd7",
+            "sma200":round(sma200,4),"entry":round(c["close"],4),"last_close":round(c["close"],4),
+            "last_close_date":c["date"],"bars":bars[-7:],
+            "exit_rule":"Sälj vid stängning när Close är högsta Close av de senaste 7 sessionerna."}
     if not low<=b["close"]<=high:return None
     def pierce(x,y):
         return x["close"]<x["open"] and y["close"]>y["open"] and y["open"]<x["close"] and y["close"]>x["close"] and y["close"]<x["open"]
@@ -308,6 +320,15 @@ def detect(bars,pattern,low,high):
         if not confirmed:return None
         status="BEKRÄFTAD"
         entry=a["open"]
+    elif pattern=="inside_bar":
+        # Restored Green Inside Bar setup: candle c is green and fully inside mother candle b.
+        # Entry is the direct upside breakout level; initial protection is the Inside Bar low.
+        inside=c["high"]<b["high"] and c["low"]>b["low"]
+        if not (inside and c["close"]>c["open"]):return None
+        entry=c["high"]
+        stop=c["low"]
+        if entry<=stop:return None
+        status="BEKRÄFTAD"
     elif pattern=="engulfing":
         if not (b["close"]<b["open"] and c["close"]>c["open"] and c["open"]<b["close"] and c["close"]>b["open"]):return None
         status="MÖNSTERTRÄFF";entry=b["open"]
@@ -316,7 +337,7 @@ def detect(bars,pattern,low,high):
         if not(body>0 and min(c["open"],c["close"])-c["low"]>=2*body and c["high"]-max(c["open"],c["close"])<=body):return None
         status="MÖNSTERTRÄFF";entry=c["open"]
     else:return None
-    return {"status":status,"date":c["date"],"stop":round(stop,4) if pattern in ("nova","hidden_gate") else round(b["low"],4),"strategy":pattern,"sma200":round(sma200,4) if pattern=="nova" else None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
+    return {"status":status,"date":c["date"],"stop":round(stop,4) if pattern in ("nova","hidden_gate","piercing","inside_bar") else round(b["low"],4),"strategy":pattern,"sma200":round(sma200,4) if pattern=="nova" else None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
 
 def do_scan(job_id,options):
     job=JOBS[job_id]
@@ -478,13 +499,40 @@ def backtest(symbol:str,market:str="SE"):
         cached=BACKTEST_CACHE.get(key)
         if cached and time.time()-cached[0]<86400:return cached[1]
     try:
-        bars=history({"symbol":symbol},market,"5y")
-        strategies=("piercing","hidden_gate","nova")
+        yahoo_symbol=symbol
+        if market=="SE" and not yahoo_symbol.upper().endswith(".ST"):
+            yahoo_symbol=yahoo_symbol.replace("_","-").replace(".","-")+".ST"
+        bars=history({"symbol":yahoo_symbol},market,"5y")
+        strategies=("piercing","inside_bar","nova","dd7","hidden_gate")
         board=[]
         for strategy in strategies:
             trades=[];unfilled=0;ambiguous=0
+            if strategy=="dd7":
+                # Original DD7 is close-to-close and has no fixed stop/2R target.
+                i=205
+                while i<len(bars)-1:
+                    signal=detect(bars[:i+1],"dd7",0,1e12,"green_low")
+                    if not signal:
+                        i+=1;continue
+                    entry=float(signal["entry"]);exit_i=None
+                    for j in range(i+1,len(bars)):
+                        closes=[x["close"] for x in bars[j-6:j+1]]
+                        if len(closes)==7 and bars[j]["close"]>=max(closes):
+                            exit_i=j;break
+                    if exit_i is None:break
+                    ret=(bars[exit_i]["close"]/entry-1)*100
+                    trades.append(ret)
+                    i=exit_i+1
+                wins=sum(v>0 for v in trades);losses=sum(v<=0 for v in trades)
+                gross_win=sum(v for v in trades if v>0);gross_loss=-sum(v for v in trades if v<0)
+                board.append({"strategy":"dd7","trades":len(trades),"wins":wins,
+                    "win_rate":round(100*wins/len(trades),1) if trades else None,
+                    "total_r":None,"total_return_pct":round(sum(trades),1),
+                    "profit_factor":round(gross_win/gross_loss,2) if gross_loss>0 else None,
+                    "unfilled":0,"ambiguous_conservative":0,"metric":"close_to_close_pct"})
+                continue
             for i in range(205,len(bars)-1):
-                signal=detect(bars[:i+1],strategy,0,1e12)
+                signal=detect(bars[:i+1],strategy,0,1e12,"green_low")
                 if not signal or signal.get("status")!="BEKRÄFTAD":continue
                 entry=float(signal["entry"]);stop=float(signal["stop"])
                 risk=entry-stop
