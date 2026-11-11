@@ -298,16 +298,16 @@ def detect(bars,pattern,low,high,stop_mode="green_low"):
         if entry<=stop:return None
         status="BEKRÄFTAD"
     elif pattern=="piercing":
-        # Restored from the known working Loomis/Bravida scanner.
-        # Keep its original price-filter placement and confirmation expression.
-        if not low<=b["close"]<=high:return None
-        confirmed=pierce(a,b) and c["close"]>a["open"]
-        waiting=pierce(b,c)
-        if not confirmed and not waiting:return None
-        status="BEKRÄFTAD" if confirmed else "OBEKRÄFTAD – EJ KÖP"
-        entry=a["open"] if confirmed else b["open"]
-        green=b if confirmed else c
-        stop=green["open"] if stop_mode=="green_open" else green["low"]
+        # EXACT THREE-CANDLE WINDOW: a,b,c are bars[-3:], the latest 3 completed daily candles.
+        # a (two sessions back) must be red.
+        # b (one session back) must be the qualifying green piercing candle.
+        # c (latest completed session) may be red or green, but MUST close above a.open.
+        # No waiting candidates, no older setup, no fourth/continuation candle.
+        if not pierce(a,b):return None
+        if not c["close"]>a["open"]:return None
+        status="BEKRÄFTAD"
+        entry=a["open"]
+        stop=b["open"] if stop_mode=="green_open" else b["low"]
         if entry<=stop:return None
     elif pattern=="inside_bar":
         # Restored Green Inside Bar setup: candle c is green and fully inside mother candle b.
@@ -327,7 +327,7 @@ def detect(bars,pattern,low,high,stop_mode="green_low"):
         status="MÖNSTERTRÄFF";entry=c["open"]
     else:return None
     # Price interval follows the strategy's actual planned entry/signal price.
-    if pattern!="piercing" and not price_ok(entry):return None
+    if not price_ok(entry):return None
     return {"status":status,"date":c["date"],"stop":round(stop,4) if pattern in ("nova","hidden_gate","piercing","inside_bar") else round(b["low"],4),"strategy":pattern,"sma200":round(sma200,4) if pattern=="nova" else None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
 
 def do_scan(job_id,options):
