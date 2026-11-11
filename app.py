@@ -298,14 +298,17 @@ def detect(bars,pattern,low,high,stop_mode="green_low"):
         if entry<=stop:return None
         status="BEKRÄFTAD"
     elif pattern=="piercing":
-        # Three Candle Method:
-        # a = red candle, b = qualifying green recovery candle,
-        # c = confirmation candle of either colour closing above candle a open.
-        if not pierce(a,b):return None
-        if not c["close"]>a["open"]:return None
-        status="BEKRÄFTAD"
-        entry=a["open"]
-        stop=b["open"] if stop_mode=="green_open" else b["low"]
+        # Three Candle Method — restored Loomis/Bravida behaviour.
+        # a,b,c are ALWAYS the three latest completed daily candles.
+        # Confirmed: a=red, b=qualifying green, latest candle c closes above a open.
+        # Waiting: b=red, latest candle c=qualifying green; confirmation can only occur next session.
+        confirmed=pierce(a,b) and c["close"]>a["open"]
+        waiting=pierce(b,c)
+        if not confirmed and not waiting:return None
+        status="BEKRÄFTAD" if confirmed else "OBEKRÄFTAD – EJ KÖP"
+        entry=a["open"] if confirmed else b["open"]
+        signal_green=b if confirmed else c
+        stop=signal_green["open"] if stop_mode=="green_open" else signal_green["low"]
         if entry<=stop:return None
     elif pattern=="inside_bar":
         # Restored Green Inside Bar setup: candle c is green and fully inside mother candle b.
