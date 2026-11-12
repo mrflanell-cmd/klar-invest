@@ -307,13 +307,13 @@ def detect(bars,pattern,low,high):
             and middle["open"] < red["close"]
             and middle["close"] > red["close"]
             and middle["close"] < red["open"]
+            and latest["close"] > latest["open"]
             and latest["close"] > red["open"]
-            and latest["close"] > middle["close"]
         )
         if not confirmed:return None
         status="BEKRÄFTAD"
         entry=red["open"]
-        stop=middle["low"]
+        stop=red["close"]
         if entry<=stop:return None
     elif pattern=="piercing":
         # LOCKED THREE CANDLE RULE:
@@ -321,13 +321,13 @@ def detect(bars,pattern,low,high):
         # Ljus 3: rött.
         # Ljus 2: grönt, öppnar under Ljus 3 Close, stänger över Ljus 3 Close
         #          men under Ljus 3 Open.
-        # Ljus 1: färg spelar ingen roll, stänger över Ljus 3 Open.
+        # Ljus 1: grönt bekräftelseljus som stänger över Ljus 3 Open.
         candle3_red = a["close"] < a["open"]
         candle2_green = b["close"] > b["open"]
         candle2_opens_below_candle3_close = b["open"] < a["close"]
         candle2_closes_above_candle3_close = b["close"] > a["close"]
         candle2_closes_below_candle3_open = b["close"] < a["open"]
-        candle1_confirms = c["close"] > a["open"]
+        candle1_confirms = c["close"] > c["open"] and c["close"] > a["open"]
         confirmed = (
             candle3_red
             and candle2_green
@@ -339,6 +339,8 @@ def detect(bars,pattern,low,high):
         if not confirmed:return None
         status="BEKRÄFTAD"
         entry=a["open"]
+        stop=a["close"]
+        if entry<=stop:return None
     elif pattern=="inside_bar":
         # Restored Green Inside Bar setup: candle c is green and fully inside mother candle b.
         # Entry is the direct upside breakout level; initial protection is the Inside Bar low.
@@ -405,8 +407,9 @@ def do_scan(job_id,options):
                                 and mb[1]["open"] < mb[0]["close"]
                                 and mb[1]["close"] > mb[0]["close"]
                                 and mb[1]["close"] < mb[0]["open"]
+                                and mb[2]["close"] > mb[2]["open"]
                                 and mb[2]["close"] > mb[0]["open"]
-                                and mb[2]["close"] > mb[1]["close"])
+                                and match["stop"] == round(mb[0]["close"],4))
                             # The hit must also use the latest completed Swedish session.
                             # Before today's close that means the previous weekday; after close, today.
                             if valid and options.market=="SE":
