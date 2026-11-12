@@ -204,7 +204,7 @@ def history(item,market,period=None):
     quote=d["indicators"]["quote"][0];bars=[]
     zone=ZoneInfo("Europe/Stockholm" if market=="SE" else "America/New_York")
     now=dt.datetime.now(zone)
-    close_time=dt.time(18,15) if market=="SE" else dt.time(16,15)
+    close_time=dt.time(17,35) if market=="SE" else dt.time(16,15)
     for ix,t in enumerate(d.get("timestamp",[])):
         vals=[quote[k][ix] for k in ("open","high","low","close")]
         if any(v is None for v in vals):continue
@@ -235,7 +235,7 @@ def detect(bars,pattern,low,high):
             "sma200":round(sma200,4),"entry":round(c["close"],4),"last_close":round(c["close"],4),
             "last_close_date":c["date"],"bars":bars[-7:],
             "exit_rule":"Sälj vid stängning när Close är högsta Close av de senaste 7 sessionerna."}
-    if not low<=b["close"]<=high:return None
+    if not low<= (a["open"] if pattern in ("piercing","available_method") else b["close"]) <=high:return None
     def pierce(x,y):
         return x["close"]<x["open"] and y["close"]>y["open"] and y["open"]<x["close"] and y["close"]>x["close"] and y["close"]<x["open"]
     if pattern in ("legend_turtle","legend_livermore","legend_raschke","legend_oneil"):
@@ -307,7 +307,6 @@ def detect(bars,pattern,low,high):
             and middle["open"] < red["close"]
             and middle["close"] > red["close"]
             and middle["close"] < red["open"]
-            and latest["close"] > latest["open"]
             and latest["close"] > red["open"]
         )
         if not confirmed:return None
@@ -327,7 +326,7 @@ def detect(bars,pattern,low,high):
         candle2_opens_below_candle3_close = b["open"] < a["close"]
         candle2_closes_above_candle3_close = b["close"] > a["close"]
         candle2_closes_below_candle3_open = b["close"] < a["open"]
-        candle1_confirms = c["close"] > c["open"] and c["close"] > a["open"]
+        candle1_confirms = c["close"] > a["open"]
         confirmed = (
             candle3_red
             and candle2_green
@@ -407,14 +406,13 @@ def do_scan(job_id,options):
                                 and mb[1]["open"] < mb[0]["close"]
                                 and mb[1]["close"] > mb[0]["close"]
                                 and mb[1]["close"] < mb[0]["open"]
-                                and mb[2]["close"] > mb[2]["open"]
                                 and mb[2]["close"] > mb[0]["open"]
                                 and match["stop"] == round(mb[0]["close"],4))
                             # The hit must also use the latest completed Swedish session.
                             # Before today's close that means the previous weekday; after close, today.
                             if valid and options.market=="SE":
                                 se_now=dt.datetime.now(ZoneInfo("Europe/Stockholm"))
-                                se_close=dt.time(18,15)
+                                se_close=dt.time(17,35)
                                 required=se_now.date() if se_now.time()>=se_close else se_now.date()-dt.timedelta(days=1)
                                 while required.weekday()>=5:
                                     required-=dt.timedelta(days=1)
