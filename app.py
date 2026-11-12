@@ -192,7 +192,7 @@ def universe(market):
 
 def history(item,market,period=None):
     url="https://query1.finance.yahoo.com/v8/finance/chart/"+requests.utils.quote(item["symbol"],safe="")
-    r=requests.get(url,params={"range":period or ("1y" if item.get("nova") or item.get("legend") else "3mo"),"interval":"1d"},headers={"User-Agent":"Mozilla/5.0"},timeout=12)
+    r=requests.get(url,params={"range":period or ("1y" if item.get("nova") or item.get("legend") else "3mo"),"interval":"1d","includePrePost":"false","events":"div,splits","_fresh":str(int(time.time()))},headers={"User-Agent":"Mozilla/5.0","Cache-Control":"no-cache","Pragma":"no-cache"},timeout=12)
     r.raise_for_status()
     result=r.json().get("chart",{}).get("result") or []
     if not result:raise ValueError("Inga kursdata")
@@ -210,7 +210,7 @@ def history(item,market,period=None):
         if any(v is None for v in vals):continue
         o,h,l,c=vals
         if min(vals)<=0 or h<max(o,c) or l>min(o,c):continue
-        date=dt.datetime.fromtimestamp(t,zone).date()
+        date=dt.datetime.fromtimestamp(t,dt.timezone.utc).astimezone(zone).date()
         # Futures can have overnight sessions; wait until the next calendar day
         # rather than mistaking a partially formed futures daily bar for a close.
         if market=="COM" and date>=now.date():
