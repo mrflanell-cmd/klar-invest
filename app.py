@@ -397,6 +397,18 @@ def do_scan(job_id,options):
                             job["error_examples"].append(ticker+": "+error)
                     else:
                         job["checked"]+=1
+                        if match and options.pattern=="available_method":
+                            # Final guard: never publish a stale/invalid Tillgänglig-metod hit.
+                            mb=match.get("bars") or []
+                            valid=(len(mb)==3
+                                and mb[0]["close"] < mb[0]["open"]
+                                and mb[1]["close"] > mb[1]["open"]
+                                and mb[1]["open"] < mb[0]["close"]
+                                and mb[1]["close"] > mb[0]["close"]
+                                and mb[1]["close"] < mb[0]["open"]
+                                and mb[2]["close"] > mb[0]["open"]
+                                and mb[2]["close"] > mb[1]["close"])
+                            if not valid:match=None
                         if match:
                             match.update({"name":item["name"],"ticker":ticker,
                                 "currency":"SEK" if options.market=="SE" else "USD",
