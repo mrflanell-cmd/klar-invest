@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from community_auth import router as community_router
 
-app=FastAPI(title="KLAR INVEST 2")
+app=FastAPI(title="KLAR INVEST")
 app.include_router(community_router)
 JOBS={}
 TZ=ZoneInfo("Europe/Stockholm")
@@ -192,7 +192,7 @@ def universe(market):
 
 def history(item,market,period=None):
     url="https://query1.finance.yahoo.com/v8/finance/chart/"+requests.utils.quote(item["symbol"],safe="")
-    r=requests.get(url,params={"range":period or ("1y" if item.get("nova") or item.get("legend") else "3mo"),"interval":"1d","includePrePost":"false","events":"div,splits","_fresh":str(int(time.time()))},headers={"User-Agent":"Mozilla/5.0","Cache-Control":"no-cache","Pragma":"no-cache"},timeout=12)
+    r=requests.get(url,params={"range":period or ("1y" if item.get("nova") or item.get("legend") else "3mo"),"interval":"1d"},headers={"User-Agent":"Mozilla/5.0"},timeout=12)
     r.raise_for_status()
     result=r.json().get("chart",{}).get("result") or []
     if not result:raise ValueError("Inga kursdata")
@@ -210,7 +210,7 @@ def history(item,market,period=None):
         if any(v is None for v in vals):continue
         o,h,l,c=vals
         if min(vals)<=0 or h<max(o,c) or l>min(o,c):continue
-        date=dt.datetime.fromtimestamp(t,dt.timezone.utc).astimezone(zone).date()
+        date=dt.datetime.fromtimestamp(t,zone).date()
         # Futures can have overnight sessions; wait until the next calendar day
         # rather than mistaking a partially formed futures daily bar for a close.
         if market=="COM" and date>=now.date():
@@ -219,16 +219,6 @@ def history(item,market,period=None):
             continue
         bars.append({"date":str(date),"open":o,"high":h,"low":l,"close":c})
     if len(bars)<3:raise ValueError("Otillräckliga dagskurser")
-    # KLAR INVEST 2 must never scan a stale Swedish daily candle as the latest one.
-    # Before today's Swedish session has closed, yesterday (or the previous weekday
-    # after a weekend) is the required latest completed session.
-    if market=="SE":
-        required=now.date() if now.time()>=close_time else now.date()-dt.timedelta(days=1)
-        while required.weekday()>=5:
-            required-=dt.timedelta(days=1)
-        latest=dt.date.fromisoformat(bars[-1]["date"])
-        if latest < required:
-            raise ValueError("Kursdata ej uppdaterad till senaste avslutade handelsdag: "+str(required))
     return bars
 
 def detect(bars,pattern,low,high):
@@ -317,13 +307,13 @@ def detect(bars,pattern,low,high):
             and middle["open"] < red["close"]
             and middle["close"] > red["close"]
             and middle["close"] < red["open"]
+            and latest["close"] > latest["open"]
             and latest["close"] > red["open"]
-            and latest["close"] > middle["close"]
         )
         if not confirmed:return None
         status="BEKRÄFTAD"
         entry=red["open"]
-        stop=middle["low"]
+        stop=red["close"]
         if entry<=stop:return None
     elif pattern=="piercing":
         # LOCKED THREE CANDLE RULE:
@@ -331,13 +321,13 @@ def detect(bars,pattern,low,high):
         # Ljus 3: rött.
         # Ljus 2: grönt, öppnar under Ljus 3 Close, stänger över Ljus 3 Close
         #          men under Ljus 3 Open.
-        # Ljus 1: färg spelar ingen roll, stänger över Ljus 3 Open.
+        # Ljus 1: grönt bekräftelseljus som stänger över Ljus 3 Open.
         candle3_red = a["close"] < a["open"]
         candle2_green = b["close"] > b["open"]
         candle2_opens_below_candle3_close = b["open"] < a["close"]
         candle2_closes_above_candle3_close = b["close"] > a["close"]
         candle2_closes_below_candle3_open = b["close"] < a["open"]
-        candle1_confirms = c["close"] > a["open"]
+        candle1_confirms = c["close"] > c["open"] and c["close"] > a["open"]
         confirmed = (
             candle3_red
             and candle2_green
@@ -349,6 +339,8 @@ def detect(bars,pattern,low,high):
         if not confirmed:return None
         status="BEKRÄFTAD"
         entry=a["open"]
+        stop=a["close"]
+        if entry<=stop:return None
     elif pattern=="inside_bar":
         # Restored Green Inside Bar setup: candle c is green and fully inside mother candle b.
         # Entry is the direct upside breakout level; initial protection is the Inside Bar low.
@@ -415,8 +407,21 @@ def do_scan(job_id,options):
                                 and mb[1]["open"] < mb[0]["close"]
                                 and mb[1]["close"] > mb[0]["close"]
                                 and mb[1]["close"] < mb[0]["open"]
+                                and mb[2]["close"] > mb[2]["open"]
                                 and mb[2]["close"] > mb[0]["open"]
-                                and mb[2]["close"] > mb[1]["close"])
+                                and match["stop"] == round(mb[0]["close"],4))
+                            # The hit must also use the latest completed Swedish session.
+                            # Before today's close that means the previous weekday; after close, today.
+                            if valid and options.market=="SE":
+                                se_now=dt.datetime.now(ZoneInfo("Europe/Stockholm"))
+                                se_close=dt.time(18,15)
+                                required=se_now.date() if se_now.time()>=se_close else se_now.date()-dt.timedelta(days=1)
+                                while required.weekday()>=5:
+                                    required-=dt.timedelta(days=1)
+                                try:
+                                    valid=dt.date.fromisoformat(str(mb[2]["date"])) >= required
+                                except (ValueError,TypeError,KeyError):
+                                    valid=False
                             if not valid:match=None
                         if match:
                             match.update({"name":item["name"],"ticker":ticker,
