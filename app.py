@@ -297,24 +297,23 @@ def detect(bars,pattern,low,high):
         if entry<=stop:return None
         status="BEKRÄFTAD"
     elif pattern=="available_method":
-        # TILLGÄNGLIG METOD — EXACTLY the three latest completed daily candles.
-        # a = [-3] red candle.
-        # b = [-2] green candle: Open below a Close, Close above a Close but below a Open.
-        # c = [-1] latest completed candle: Close above the prior two candle bodies
-        # (with b Close < a Open this is equivalent to c Close > a Open).
+        # TILLGÄNGLIG METOD: ONLY the three latest completed daily candles.
+        red = bars[-3]
+        middle = bars[-2]
+        latest = bars[-1]
         confirmed = (
-            a["close"] < a["open"]
-            and b["close"] > b["open"]
-            and b["open"] < a["close"]
-            and b["close"] > a["close"]
-            and b["close"] < a["open"]
-            and c["close"] > a["open"]
-            and c["close"] > b["close"]
+            red["close"] < red["open"]
+            and middle["close"] > middle["open"]
+            and middle["open"] < red["close"]
+            and middle["close"] > red["close"]
+            and middle["close"] < red["open"]
+            and latest["close"] > red["open"]
+            and latest["close"] > middle["close"]
         )
         if not confirmed:return None
         status="BEKRÄFTAD"
-        entry=a["open"]
-        stop=b["low"]
+        entry=red["open"]
+        stop=middle["low"]
         if entry<=stop:return None
     elif pattern=="piercing":
         # LOCKED THREE CANDLE RULE:
