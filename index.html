@@ -240,7 +240,7 @@ function formatTime(value){
 }
 function optionsLabel(o){
   if(!o)return 'Sökning';
-  const names={hidden_gate:'The Hidden Gate · prototyp',nova:'Nova – The First Light',dd7:'Double Seven · Original',piercing:'The Three Candle Method',inside_bar:'Green Inside Bar · breakout',engulfing:'Bullish Engulfing',hammer:'Hammer'};
+  const names={available_method:'Tillgänglig metod',hidden_gate:'The Hidden Gate · prototyp',nova:'Nova – The First Light',dd7:'Double Seven · Original',piercing:'The Three Candle Method',inside_bar:'Green Inside Bar · breakout',engulfing:'Bullish Engulfing',hammer:'Hammer'};
   const groupNames={all:'Alla',metals:'Metaller',energy:'Energi',grains:'Spannmål',softs:'Kaffe/kakao m.m.',livestock:'Boskap'};
   const place=o.market==='US'?'🇺🇸 USA':o.market==='COM'?'🛢️ Råvaror · '+(groupNames[o.commodity_group]||'Alla'):'🇸🇪 Sverige';
   return place+' · '+(names[o.pattern]||o.pattern||'Formation');
@@ -642,6 +642,9 @@ function checkpointFromEntry(entry){
 }
 async function beginScan(opts,checkpoint=null){
   if(activeJob)return;
+  // Tillgänglig metod changed during validation: always start clean so old saved
+  // checkpoints/results can never leak into a new scan.
+  if(opts?.pattern==='available_method')checkpoint=null;
   setRunning(true);
   $('results').replaceChildren();$('stats').textContent='';
   setStatus(checkpoint?'Återupptar sökningen där den slutade…':'Startar en ny sökning…');
