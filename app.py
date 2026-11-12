@@ -219,6 +219,16 @@ def history(item,market,period=None):
             continue
         bars.append({"date":str(date),"open":o,"high":h,"low":l,"close":c})
     if len(bars)<3:raise ValueError("Otillräckliga dagskurser")
+    # KLAR INVEST 2 must never scan a stale Swedish daily candle as the latest one.
+    # Before today's Swedish session has closed, yesterday (or the previous weekday
+    # after a weekend) is the required latest completed session.
+    if market=="SE":
+        required=now.date() if now.time()>=close_time else now.date()-dt.timedelta(days=1)
+        while required.weekday()>=5:
+            required-=dt.timedelta(days=1)
+        latest=dt.date.fromisoformat(bars[-1]["date"])
+        if latest < required:
+            raise ValueError("Kursdata ej uppdaterad till senaste avslutade handelsdag: "+str(required))
     return bars
 
 def detect(bars,pattern,low,high):
