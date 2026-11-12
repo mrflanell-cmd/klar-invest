@@ -407,6 +407,18 @@ def do_scan(job_id,options):
                                 and mb[1]["close"] < mb[0]["open"]
                                 and mb[2]["close"] > mb[0]["open"]
                                 and mb[2]["close"] > mb[1]["close"])
+                            # The hit must also use the latest completed Swedish session.
+                            # Before today's close that means the previous weekday; after close, today.
+                            if valid and options.market=="SE":
+                                se_now=dt.datetime.now(ZoneInfo("Europe/Stockholm"))
+                                se_close=dt.time(18,15)
+                                required=se_now.date() if se_now.time()>=se_close else se_now.date()-dt.timedelta(days=1)
+                                while required.weekday()>=5:
+                                    required-=dt.timedelta(days=1)
+                                try:
+                                    valid=dt.date.fromisoformat(str(mb[2]["date"])) >= required
+                                except (ValueError,TypeError,KeyError):
+                                    valid=False
                             if not valid:match=None
                         if match:
                             match.update({"name":item["name"],"ticker":ticker,
