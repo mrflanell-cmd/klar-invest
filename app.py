@@ -297,9 +297,11 @@ def detect(bars,pattern,low,high):
         if entry<=stop:return None
         status="BEKRÄFTAD"
     elif pattern=="available_method":
-        # TILLGÄNGLIG METOD — separate from Piercing Line.
-        # a: red. b: green, opens below a close and closes above a close.
-        # c: latest closed candle confirms by closing above a open.
+        # TILLGÄNGLIG METOD — EXACTLY the three latest completed daily candles.
+        # a = [-3] red candle.
+        # b = [-2] green candle: Open below a Close, Close above a Close but below a Open.
+        # c = [-1] latest completed candle: Close above the prior two candle bodies
+        # (with b Close < a Open this is equivalent to c Close > a Open).
         confirmed = (
             a["close"] < a["open"]
             and b["close"] > b["open"]
@@ -307,6 +309,7 @@ def detect(bars,pattern,low,high):
             and b["close"] > a["close"]
             and b["close"] < a["open"]
             and c["close"] > a["open"]
+            and c["close"] > b["close"]
         )
         if not confirmed:return None
         status="BEKRÄFTAD"
