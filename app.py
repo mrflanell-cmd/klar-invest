@@ -235,7 +235,7 @@ def detect(bars,pattern,low,high):
             "sma200":round(sma200,4),"entry":round(c["close"],4),"last_close":round(c["close"],4),
             "last_close_date":c["date"],"bars":bars[-7:],
             "exit_rule":"Sälj vid stängning när Close är högsta Close av de senaste 7 sessionerna."}
-    if not low<= (a["open"] if pattern in ("piercing","available_method") else b["close"]) <=high:return None
+    if not low<= (a["open"] if pattern in ("piercing","available_method","deep_reclaim") else b["close"]) <=high:return None
     def pierce(x,y):
         return x["close"]<x["open"] and y["close"]>y["open"] and y["open"]<x["close"] and y["close"]>x["close"] and y["close"]<x["open"]
     if pattern in ("legend_turtle","legend_livermore","legend_raschke","legend_oneil"):
@@ -314,6 +314,16 @@ def detect(bars,pattern,low,high):
         entry=red["open"]
         stop=red["close"]
         if entry<=stop:return None
+    elif pattern=="deep_reclaim":
+        # Separate sweep variant, preserves original piercing strategy.
+        if not (a["close"] < a["open"] and b["close"] > b["open"]
+                and b["open"] <= a["close"] and b["low"] < a["close"]
+                and a["close"] < b["close"] < a["open"]
+                and c["close"] > a["open"]):
+            return None
+        status="BEKRÄFTAD"
+        entry=a["open"]
+        stop=a["close"]
     elif pattern=="piercing":
         # LOCKED THREE CANDLE RULE:
         # a = Ljus 3 (tredje senaste), b = Ljus 2 (näst senaste), c = Ljus 1 (senaste).
@@ -357,7 +367,7 @@ def detect(bars,pattern,low,high):
         if not(body>0 and min(c["open"],c["close"])-c["low"]>=2*body and c["high"]-max(c["open"],c["close"])<=body):return None
         status="MÖNSTERTRÄFF";entry=c["open"]
     else:return None
-    return {"status":status,"date":c["date"],"stop":round(stop,4) if pattern in ("nova","hidden_gate","piercing","inside_bar","available_method") else round(b["low"],4),"strategy":pattern,"sma200":round(sma200,4) if pattern=="nova" else None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
+    return {"status":status,"date":c["date"],"stop":round(stop,4) if pattern in ("nova","hidden_gate","piercing","inside_bar","available_method","deep_reclaim") else round(b["low"],4),"strategy":pattern,"sma200":round(sma200,4) if pattern=="nova" else None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
 
 def do_scan(job_id,options):
     job=JOBS[job_id]
