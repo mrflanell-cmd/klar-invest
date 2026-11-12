@@ -171,10 +171,10 @@ $('wisdom-today').addEventListener('click',()=>{
 });
 function updateWisdomLoading(running,scanned=0,total=0){
  $('scan-tip').hidden=!running;
- $('scan-progress-panel').hidden=!running;
+ $('scan-progress-panel').hidden=!(running||scanned>0);
  const pct=total>0?Math.min(100,Math.round(scanned/total*100)):0;
  $('scan-progress-bar').style.width=pct+'%';
- $('scan-progress-label').textContent='🔎 SKANNING PÅGÅR · '+pct+' %';
+ $('scan-progress-label').textContent=(running?'🔎 SKANNING PÅGÅR · ':'✅ SKANNING AVSLUTAD · ')+pct+' %';
  $('scan-progress-count').textContent=scanned.toLocaleString('sv-SE')+' av '+total.toLocaleString('sv-SE')+' instrument bearbetade';
  if(running&&!tipTimer){
    paintTip();
@@ -339,7 +339,7 @@ function renderResults(s){
   lastRiskScan=s;
   const results=Array.isArray(s.results)?s.results:[];
   const errors=Array.isArray(s.error_examples)?s.error_examples:[];
-  if(activeJob && s.state==='running')updateWisdomLoading(true,s.processed||0,s.total||0);
+  if(activeJob && ['running','paused','done','error'].includes(s.state))updateWisdomLoading(s.state==='running',s.processed||0,s.total||0);
   $('stats').textContent='Instrument: '+(s.total||0)+' | Kontrollerade: '+(s.checked||0)+
     ' | Bearbetade: '+(s.processed||0)+' | Datafel: '+(s.errors||0)+
     ' | Träffar: '+results.length;
