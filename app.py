@@ -450,7 +450,7 @@ def new_job(options):
 
 @app.get("/",response_class=HTMLResponse)
 def root():
-    return Path("index.html").read_text(encoding="utf-8")
+    return Path("index2.html").read_text(encoding="utf-8")
 
 @app.get("/community", response_class=HTMLResponse)
 def community_page():
