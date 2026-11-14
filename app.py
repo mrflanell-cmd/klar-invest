@@ -742,8 +742,20 @@ def run_basic_scan(job_id, options):
                         job["candle_counts"][candle] += 1
                         if candle != "green":
                             continue
-                        if not matches_three_candles(bars):
+                        red, piercing, confirmation = bars[-3:]
+                        if red["close"] >= red["open"]:
                             continue
+                        job["pattern_steps"]["red_first"] += 1
+                        if not (piercing["close"] > piercing["open"]
+                                and piercing["open"] < red["close"]
+                                and piercing["close"] > red["close"]
+                                and piercing["close"] < red["open"]):
+                            continue
+                        job["pattern_steps"]["piercing_second"] += 1
+                        if not (confirmation["close"] > confirmation["open"]
+                                and confirmation["close"] > red["open"]):
+                            continue
+                        job["pattern_steps"]["confirmed_third"] += 1
                         job["results"].append({
                             "ticker": item["ticker"], "name": item["name"],
                             "symbol": item["symbol"], "exchange": item["exchange"],
@@ -770,6 +782,7 @@ def start_basic_scan(o: BasicScanOptions):
         "checked":0,"errors":0,"results":[],"error_examples":[],
         "source_note":"","message":"","warnings":[],"market_counts":{},
         "required_date":None,"in_range":0,"candle_counts":{"green":0,"red":0,"doji":0},
+        "pattern_steps":{"red_first":0,"piercing_second":0,"confirmed_third":0},
         "error_categories":{"inaktuell":0,"saknad":0,"annat":0}}
     threading.Thread(target=run_basic_scan,args=(job_id,o),daemon=True).start()
     return {"job":job_id}
