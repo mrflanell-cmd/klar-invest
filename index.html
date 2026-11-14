@@ -1,18 +1,50 @@
-<!doctype html>
-<html lang="sv">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#071826">
-<title>KLAR INVEST – Under uppbyggnad</title>
-<style>
-html,body{margin:0;min-height:100%;background:#071826;color:#effaff;font-family:system-ui,-apple-system,Arial,sans-serif}
-body{min-height:100vh;display:grid;place-items:center;text-align:center}
-main{padding:32px}
-h1{font-size:clamp(2rem,8vw,4rem);letter-spacing:.08em;margin:0 0 22px}
-h1 span{color:#35dfab}
-p{font-size:clamp(1.2rem,5vw,1.8rem);margin:0;color:#b5d5e2}
-</style>
-</head>
-<body><main><h1>KLAR <span>INVEST</span></h1><p>Under uppbyggnad</p></main></body>
-</html>
+<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#071826"><title>KLAR INVEST – Svensk aktiescreener</title><style>
+*{box-sizing:border-box}body{margin:0;background:#071826;color:#eaf7fb;font:16px system-ui,-apple-system,Arial,sans-serif}main{max-width:850px;margin:0 auto;padding:30px 16px 80px}h1{font-size:clamp(32px,8vw,48px);margin:0}h1 span{color:#35dfab}.sub{color:#a8c7d4;margin:5px 0 28px}.panel{background:#0e293b;border:1px solid #285268;border-radius:20px;padding:22px;margin:18px 0}h2{font-size:21px;margin:0 0 20px}label{display:block;margin:12px 0}.check{display:flex;gap:12px;align-items:center}.check input{width:21px;height:21px;accent-color:#35dfab}.prices{display:grid;grid-template-columns:1fr 1fr;gap:16px}.prices input{width:100%;margin-top:7px;padding:13px;border-radius:10px;border:1px solid #547387;background:#071826;color:white;font-size:18px}button{border:0;border-radius:12px;background:#35dfab;color:#071826;font-size:17px;font-weight:700;padding:15px 22px;cursor:pointer;width:100%;margin-top:15px}button:disabled{opacity:.55;cursor:wait}.muted{color:#aac5d1;font-size:14px}progress{width:100%;height:22px;accent-color:#35dfab}.stats{display:flex;flex-wrap:wrap;gap:12px;margin:15px 0}.stat{padding:12px;background:#16374b;border-radius:10px}table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;border-bottom:1px solid #285268;padding:11px 7px}th{color:#a8c7d4}a{color:#6de4bd}.scroll{overflow-x:auto}.warning{color:#ffd59c}#result{display:none}@media(max-width:500px){.panel{padding:16px}.prices{gap:9px}td,th{padding:9px 5px}}
+</style></head><body><main><h1>KLAR <span>INVEST</span></h1><p class="sub">Svensk aktiescreener · Grundversion 1</p>
+<section class="panel"><h2>1. Välj marknader</h2><label class="check"><input type="checkbox" id="stockholm" checked> Nasdaq Stockholm</label><label class="check"><input type="checkbox" id="firstnorth" checked> First North Sweden</label>
+<h2 style="margin-top:28px">2. Aktiekurs (SEK)</h2><div class="prices"><label>Från<input id="min" type="number" min="0" step="0.01" value="10"></label><label>Till<input id="max" type="number" min="0" step="0.01" value="250"></label></div><p class="muted">Filtret använder senaste avslutade dagsljusets stängningskurs. Inga tradingstrategier används.</p><button id="start">🔎 Starta scanning</button></section>
+<section class="panel" id="result"><h2>3. Scanning</h2><p id="state">Förbereder...</p><progress id="bar" max="100" value="0"></progress><div class="stats"><div class="stat" id="pct">0 %</div><div class="stat" id="checked">0 kontrollerade</div><div class="stat" id="hits">0 träffar</div><div class="stat" id="errors">0 fel</div></div><p class="muted" id="source"></p><p class="warning" id="warning"></p><div class="scroll"><table><thead><tr><th>Aktie</th><th>Marknad</th><th>Senaste datum</th><th>Stängning</th><th>TradingView</th></tr></thead><tbody id="rows"></tbody></table></div></section>
+</main><script>
+const $=id=>document.getElementById(id);
+const button=$('start');
+const text=(id,value)=>$(id).textContent=value;
+const safe=value=>String(value??'');
+async function run(){
+ const min=Number($('min').value),max=Number($('max').value);
+ const options={nasdaq_stockholm:$('stockholm').checked,first_north:$('firstnorth').checked,min_price:min,max_price:max};
+ if(!options.nasdaq_stockholm&&!options.first_north){alert('Välj minst en marknad');return}
+ if(!Number.isFinite(min)||!Number.isFinite(max)||min<0||max<min){alert('Kontrollera prisintervallet');return}
+ button.disabled=true;$('result').style.display='block';text('state','Startar scanning...');$('rows').replaceChildren();text('warning','');
+ try{
+  const response=await fetch('/api/basic-scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(options)});
+  if(!response.ok)throw Error('Serverfel '+response.status);
+  const start=await response.json();if(start.error)throw Error(start.error);
+  for(;;){
+   await new Promise(resolve=>setTimeout(resolve,1500));
+   const r=await fetch('/api/basic-scan/'+encodeURIComponent(start.job),{cache:'no-store'});
+   if(!r.ok)throw Error('Kunde inte läsa framsteg');
+   const data=await r.json();
+   const percent=data.total?Math.min(100,Math.round(data.processed/data.total*100)):0;
+   $('bar').value=percent;text('pct',percent+' %');text('checked',(data.checked||0)+' av '+(data.total||'?')+' instrument med giltiga kurser');text('hits',(data.results||[]).length+' träffar');text('errors',(data.errors||0)+' fel');
+   text('source',data.source_note||'Hämtar aktielistan...');
+   text('state',data.state==='done'?'Scanning klar':data.state==='error'?'Scanning misslyckades':'Kontrollerat '+(data.processed||0)+' av '+(data.total||'?')+' instrument');
+   if(data.state==='done'||data.state==='error'||data.state==='missing'){
+    if(data.state!=='done')text('warning',data.message||'Okänt fel');
+    if(data.errors)text('warning',(data.errors||0)+' instrument kunde inte kontrolleras. '+(data.error_examples||[]).slice(0,4).join(' · '));
+    const body=$('rows');
+    for(const item of data.results||[]){
+      const tr=document.createElement('tr');
+      for(const value of [item.name+' ('+item.ticker+')',item.exchange==='FIRST_NORTH'?'First North':'Stockholm',item.date,item.close+' kr']){
+       const td=document.createElement('td');td.textContent=safe(value);tr.append(td);
+      }
+      const td=document.createElement('td'),a=document.createElement('a');
+      a.href='https://www.tradingview.com/chart/?symbol='+encodeURIComponent('OMXSTO:'+item.ticker.replaceAll(' ','_'));a.target='_blank';a.rel='noopener noreferrer';a.textContent='Öppna';td.append(a);tr.append(td);body.append(tr);
+    }
+    break;
+   }
+  }
+ }catch(e){text('state','Fel vid scanning');text('warning',e.message)}
+ finally{button.disabled=false}
+}
+button.addEventListener('click',run);
+</script></body></html>
