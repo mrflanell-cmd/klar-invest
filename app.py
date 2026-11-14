@@ -662,6 +662,21 @@ class BasicScanOptions(BaseModel):
 
 BASIC_JOBS = {}
 
+def matches_three_candles(bars):
+    """Three completed daily bars: red, piercing green, green confirmation."""
+    if len(bars) < 3:
+        return False
+    red, green, confirm = bars[-3:]
+    return (
+        red["close"] < red["open"]
+        and green["close"] > green["open"]
+        and green["open"] < red["close"]
+        and green["close"] > red["close"]
+        and green["close"] < red["open"]
+        and confirm["close"] > confirm["open"]
+        and confirm["close"] > red["open"]
+    )
+
 def run_basic_scan(job_id, options):
     job = BASIC_JOBS[job_id]
     try:
@@ -701,7 +716,7 @@ def run_basic_scan(job_id, options):
                 last = bars[-1]
                 if dt.date.fromisoformat(last["date"]) < required:
                     return item, None, "Inaktuell kurs (senast " + last["date"] + ")"
-                return item, last, None
+                return item, bars, None
             except requests.HTTPError as exc:
                 status = exc.response.status_code if exc.response is not None else None
                 return item, None, "Kurskälla HTTP " + str(status)
@@ -709,7 +724,7 @@ def run_basic_scan(job_id, options):
                 return item, None, str(exc)[:100]
         with ThreadPoolExecutor(max_workers=5) as pool:
             for future in as_completed([pool.submit(check, item) for item in selected]):
-                item, last, error = future.result()
+                item, bars, error = future.result()
                 job["processed"] += 1
                 if error:
                     job["errors"] += 1
@@ -718,6 +733,7 @@ def run_basic_scan(job_id, options):
                     if len(job["error_examples"]) < 15:
                         job["error_examples"].append(item["ticker"] + ": " + error)
                 else:
+                    last = bars[-1]
                     job["checked"] += 1
                     if options.min_price <= last["close"] <= options.max_price:
                         job["in_range"] += 1
@@ -726,10 +742,14 @@ def run_basic_scan(job_id, options):
                         job["candle_counts"][candle] += 1
                         if candle != "green":
                             continue
+                        if not matches_three_candles(bars):
+                            continue
                         job["results"].append({
                             "ticker": item["ticker"], "name": item["name"],
                             "symbol": item["symbol"], "exchange": item["exchange"],
-                            "date": last["date"], "close": round(last["close"], 4),
+                            "date": last["date"], "pattern": "three_candles",
+                            "red_date": bars[-3]["date"], "piercing_date": bars[-2]["date"],
+                            "close": round(last["close"], 4),
                             "open": round(last["open"], 4),
                             "high": round(last["high"], 4), "low": round(last["low"], 4)
                         })
