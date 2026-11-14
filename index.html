@@ -9,6 +9,25 @@ const $=id=>document.getElementById(id);
 const button=$('start');
 const text=(id,value)=>$(id).textContent=value;
 const safe=value=>String(value??'');
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function pollJob(job){
+ let failures=0;
+ for(;;){
+  await wait(1800);
+  try{
+   const r=await fetch('/api/basic-scan/'+encodeURIComponent(job),{cache:'no-store'});
+   if(!r.ok)throw Error('Serverfel '+r.status);
+   const data=await r.json();
+   failures=0;
+   return data;
+  }catch(e){
+   failures++;
+   text('state','Tillfälligt anslutningsfel – försöker igen ('+failures+'/12)');
+   if(failures>=12)throw Error('Kontakten med servern avbröts. Försök igen.');
+   await wait(Math.min(1500*failures,8000));
+  }
+ }
+}
 async function run(){
  const min=Number($('min').value),max=Number($('max').value);
  const options={nasdaq_stockholm:$('stockholm').checked,first_north:$('firstnorth').checked,min_price:min,max_price:max};
@@ -20,10 +39,7 @@ async function run(){
   if(!response.ok)throw Error('Serverfel '+response.status);
   const start=await response.json();if(start.error)throw Error(start.error);
   for(;;){
-   await new Promise(resolve=>setTimeout(resolve,1500));
-   const r=await fetch('/api/basic-scan/'+encodeURIComponent(start.job),{cache:'no-store'});
-   if(!r.ok)throw Error('Kunde inte läsa framsteg');
-   const data=await r.json();
+   const data=await pollJob(start.job);
    const percent=data.total?Math.min(100,Math.round(data.processed/data.total*100)):0;
    $('bar').value=percent;text('pct',percent+' %');text('checked',(data.checked||0)+' av '+(data.total||'?')+' instrument med giltiga kurser');text('hits',(data.results||[]).length+' träffar');text('errors',(data.errors||0)+' fel');
    text('source',data.source_note||'Hämtar aktielistan...');
