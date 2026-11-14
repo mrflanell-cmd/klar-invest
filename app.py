@@ -76,40 +76,49 @@ def get_json_with_retries(url, params):
     raise last_error
 
 def first_north_sweden_universe():
-    """Best-effort live Nasdaq First North Sweden discovery, never guess country."""
-    items = []
-    errors = []
+    """Read only explicitly Swedish First North listings; report feed failures."""
+    items, errors = [], []
     url = "https://api.nasdaq.com/api/nordic/screener/shares"
-    headers = {"User-Agent":"Mozilla/5.0", "Accept":"application/json"}
-    for page in range(1, 11):
+    headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json",
+               "Origin": "https://www.nasdaq.com"}
+    for page in range(1, 21):
         try:
-            r = requests.get(url, params={"category":"FIRST_NORTH","tableonly":"true",
-                             "page":page,"size":100,"lang":"en"},headers=headers,timeout=18)
+            r = requests.get(url, params={"category": "FIRST_NORTH",
+                "tableonly": "true", "page": page, "size": 100, "lang": "en"},
+                headers=headers, timeout=18)
             r.raise_for_status()
             data = r.json().get("data") or {}
             listing = data.get("instrumentListing") or {}
-            rows = listing.get("rows") or []
-            if not isinstance(rows,list):raise ValueError("Okänt Nasdaq-format")
-            if not rows:break
+            rows = listing.get("rows") or data.get("rows") or []
+            if not isinstance(rows, list):
+                raise ValueError("Okänt Nasdaq-format")
+            if not rows:
+                break
             for row in rows:
-                if not isinstance(row,dict):continue
-                country = " ".join(str(row.get(k) or "") for k in
-                    ("market","marketName","marketSegment","marketSegmentName",
-                     "exchange","exchangeName","country","countryName"))
-                # Other Nordic First North listings must never be treated as Swedish.
-                if not any(tag in country.lower() for tag in ("sweden","stockholm","first north sweden")):
+                if not isinstance(row, dict):
                     continue
-                t = str(row.get("symbol") or row.get("ticker") or "").strip().upper()
-                if not re.fullmatch(r"[A-Z0-9._ -]{1,24}",t):continue
-                symbol = t.replace(" ","-").replace("_","-").replace(".","-")+".ST"
-                items.append({"ticker":t,"symbol":symbol,
-                              "name":str(row.get("name") or row.get("companyName") or t),
-                              "exchange":"FIRST_NORTH"})
-            if len(rows)<100:break
-        except (requests.RequestException,ValueError,TypeError) as exc:
-            errors.append(str(exc)[:90])
+                cells = {str(k).lower(): (v.get("value", "") if isinstance(v, dict) else v)
+                         for k, v in row.items()}
+                country = " ".join(str(cells.get(k) or "") for k in
+                    ("market", "marketname", "marketsegment", "marketsegmentname",
+                     "exchange", "exchangename", "country", "countryname",
+                     "listingmarket", "marketplace"))
+                if not any(tag in country.lower() for tag in
+                           ("sweden", "stockholm", "first north sweden")):
+                    continue
+                t = str(cells.get("symbol") or cells.get("ticker") or "").strip().upper()
+                if not re.fullmatch(r"[A-Z0-9._ -]{1,24}", t):
+                    continue
+                symbol = t.replace(" ", "-").replace("_", "-").replace(".", "-") + ".ST"
+                items.append({"ticker": t, "symbol": symbol,
+                              "name": str(cells.get("name") or cells.get("companyname") or t),
+                              "exchange": "FIRST_NORTH"})
+            if len(rows) < 100:
+                break
+        except (requests.RequestException, ValueError, TypeError) as exc:
+            errors.append(str(exc)[:120])
             break
-    return items, errors
+    return list({item["symbol"]: item for item in items}.values()), errors
 
 def universe(market):
     if market == "COM":
@@ -657,11 +666,9 @@ def run_basic_scan(job_id, options):
     job = BASIC_JOBS[job_id]
     try:
         items, note = universe("SE")
-        selected = []
-        seen = set()
+        selected, seen = [], set()
         for item in items:
             exchange = item.get("exchange")
-            # Legacy OMXSTO feed includes NGM; exclude it explicitly.
             if exchange == "OMXSTO" and not options.nasdaq_stockholm:
                 continue
             if exchange == "FIRST_NORTH" and not options.first_north:
@@ -672,16 +679,32 @@ def run_basic_scan(job_id, options):
             if symbol not in seen:
                 selected.append(item)
                 seen.add(symbol)
+        job["market_counts"] = {
+            "OMXSTO": sum(x.get("exchange") == "OMXSTO" for x in selected),
+            "FIRST_NORTH": sum(x.get("exchange") == "FIRST_NORTH" for x in selected)}
         job["total"] = len(selected)
         job["source_note"] = note
+        if options.first_north and not job["market_counts"]["FIRST_NORTH"]:
+            job["warnings"].append("First North kunde inte hämtas eller verifieras. Täckningen är ofullständig.")
         if not selected:
-            job["state"] = "done"
+            job["state"] = "error"
+            job["message"] = "Inga verifierade instrument för valda marknader."
             return
+        now = dt.datetime.now(TZ)
+        required = now.date() if now.time() >= dt.time(18, 15) else now.date() - dt.timedelta(days=1)
+        while required.weekday() >= 5:
+            required -= dt.timedelta(days=1)
+        job["required_date"] = str(required)
         def check(item):
             try:
                 bars = history(item, "SE")
                 last = bars[-1]
+                if dt.date.fromisoformat(last["date"]) < required:
+                    return item, None, "Inaktuell kurs (senast " + last["date"] + ")"
                 return item, last, None
+            except requests.HTTPError as exc:
+                status = exc.response.status_code if exc.response is not None else None
+                return item, None, "Kurskälla HTTP " + str(status)
             except Exception as exc:
                 return item, None, str(exc)[:100]
         with ThreadPoolExecutor(max_workers=5) as pool:
@@ -690,6 +713,8 @@ def run_basic_scan(job_id, options):
                 job["processed"] += 1
                 if error:
                     job["errors"] += 1
+                    category = "inaktuell" if error.startswith("Inaktuell") else "saknad" if "404" in error else "annat"
+                    job["error_categories"][category] += 1
                     if len(job["error_examples"]) < 15:
                         job["error_examples"].append(item["ticker"] + ": " + error)
                 else:
@@ -717,7 +742,8 @@ def start_basic_scan(o: BasicScanOptions):
     job_id = str(uuid.uuid4())
     BASIC_JOBS[job_id] = {"state":"running","total":0,"processed":0,
         "checked":0,"errors":0,"results":[],"error_examples":[],
-        "source_note":"","message":""}
+        "source_note":"","message":"","warnings":[],"market_counts":{},
+        "required_date":None,"error_categories":{"inaktuell":0,"saknad":0,"annat":0}}
     threading.Thread(target=run_basic_scan,args=(job_id,o),daemon=True).start()
     return {"job":job_id}
 
