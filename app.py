@@ -720,6 +720,12 @@ def run_basic_scan(job_id, options):
                 else:
                     job["checked"] += 1
                     if options.min_price <= last["close"] <= options.max_price:
+                        job["in_range"] += 1
+                        candle = ("green" if last["close"] > last["open"] else
+                                  "red" if last["close"] < last["open"] else "doji")
+                        job["candle_counts"][candle] += 1
+                        if candle != "green":
+                            continue
                         job["results"].append({
                             "ticker": item["ticker"], "name": item["name"],
                             "symbol": item["symbol"], "exchange": item["exchange"],
@@ -743,7 +749,8 @@ def start_basic_scan(o: BasicScanOptions):
     BASIC_JOBS[job_id] = {"state":"running","total":0,"processed":0,
         "checked":0,"errors":0,"results":[],"error_examples":[],
         "source_note":"","message":"","warnings":[],"market_counts":{},
-        "required_date":None,"error_categories":{"inaktuell":0,"saknad":0,"annat":0}}
+        "required_date":None,"in_range":0,"candle_counts":{"green":0,"red":0,"doji":0},
+        "error_categories":{"inaktuell":0,"saknad":0,"annat":0}}
     threading.Thread(target=run_basic_scan,args=(job_id,o),daemon=True).start()
     return {"job":job_id}
 
