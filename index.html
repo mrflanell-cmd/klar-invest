@@ -240,7 +240,7 @@ function formatTime(value){
 }
 function optionsLabel(o){
   if(!o)return 'Sökning';
-  const names={deep_reclaim:'The Deep Reclaim',available_method:'Tillgänglig metod',hidden_gate:'The Hidden Gate · prototyp',nova:'Nova – The First Light',dd7:'Double Seven · Original',piercing:'The Three Candle Reclaim',inside_bar:'Green Inside Bar · breakout',engulfing:'Bullish Engulfing',hammer:'Hammer'};
+  const names={available_method:'Tillgänglig metod',hidden_gate:'The Hidden Gate · prototyp',nova:'Nova – The First Light',dd7:'Double Seven · Original',piercing:'The Three Candle Reclaim',inside_bar:'Green Inside Bar · breakout',engulfing:'Bullish Engulfing',hammer:'Hammer'};
   const groupNames={all:'Alla',metals:'Metaller',energy:'Energi',grains:'Spannmål',softs:'Kaffe/kakao m.m.',livestock:'Boskap'};
   const place=o.market==='US'?'🇺🇸 USA':o.market==='COM'?'🛢️ Råvaror · '+(groupNames[o.commodity_group]||'Alla'):'🇸🇪 Sverige';
   return place+' · '+(names[o.pattern]||o.pattern||'Formation');
@@ -299,8 +299,8 @@ function drawHistory(){
 }
 let lastRiskScan=null;
 const leaderboardData=new Map();
-const strategyNames={piercing:'THE THREE CANDLE RECLAIM',deep_reclaim:'THE DEEP RECLAIM',inside_bar:'GREEN INSIDE BAR',nova:'NOVA · THE FIRST LIGHT',dd7:'DOUBLE SEVEN',hidden_gate:'THE HIDDEN GATE'};
-const strategyIcons={piercing:'⚔️',deep_reclaim:'🌊',inside_bar:'📦',nova:'✨',dd7:'7️⃣',hidden_gate:'🌙'};
+const strategyNames={piercing:'THE THREE CANDLE RECLAIM',inside_bar:'GREEN INSIDE BAR',nova:'NOVA · THE FIRST LIGHT',dd7:'DOUBLE SEVEN',hidden_gate:'THE HIDDEN GATE'};
+const strategyIcons={piercing:'⚔️',inside_bar:'📦',nova:'✨',dd7:'7️⃣',hidden_gate:'🌙'};
 function renderStrategyLeaderboard(){
  const holder=$('leaderboard-cards'),status=$('leaderboard-status');holder.replaceChildren();
  const byStrategy=new Map();
@@ -786,7 +786,7 @@ updateControls();
 (function(){
  const select=document.getElementById('pattern'),card=document.getElementById('ki-selected-card');
  const profiles={
- deep_reclaim:['THE DEEP RECLAIM','Sweep. Reclaim. Confirm.','“Patience reveals the reclaim.”','3 ljus · Sweep + bekräftelse'],piercing:['THE THREE CANDLE RECLAIM','Clear. Confirm. Execute.','“The signal doesn’t make the trade. The context does.”','3 ljus · Bekräftelse'],
+ piercing:['THE THREE CANDLE RECLAIM','Clear. Confirm. Execute.','“The signal doesn’t make the trade. The context does.”','3 ljus · Bekräftelse'],
  inside_bar:['GREEN INSIDE BAR','Wait. Compress. Break.','“Small range. Clear level. Defined risk.”','2 ljus · Direkt utbrott'],
  hidden_gate:['THE HIDDEN GATE','Beyond the false break.','“Beyond the false break, the true path begins.”','3 ljus · CRT-inspirerad prototyp'],
  nova:['NOVA — THE FIRST LIGHT','From darkness to light.','“The first light is a signal to observe, not a command to act.”','3 ljus · SMA 200'],
@@ -799,7 +799,7 @@ updateControls();
  hammer:['HAMMER','The turning point.','“One candle is a clue, not a conclusion.”','1 ljus · Mönsterträff']
  };
  function update(){const key=profiles[select.value]?select.value:'piercing',p=profiles[key];card.dataset.theme=key;document.getElementById('ki-selected-name').textContent=p[0];document.getElementById('ki-selected-tagline').textContent=p[1];document.getElementById('ki-selected-quote').textContent=p[2];document.getElementById('ki-selected-status').textContent=p[3];document.getElementById('ki-selected-purpose').textContent={piercing:'Söker rött ljus, grönt ljus som stänger inne i den röda kroppen och ett tredje ljus som stänger över första ljusets öppning. Limitköp vid första ljusets öppning. Du väljer SL vid gröna ljusets öppning eller Low/veke.',inside_bar:'Söker en grön Inside Bar helt inom moderljusets High/Low. Köp triggas direkt vid utbrott över Inside Barens High; initial SL vid Inside Barens Low.',dd7:'Söker aktier över SMA 200 där dagens Close är den lägsta stängningen av de senaste 7 handelsdagarna. Ingen fast SL och ingen 2R-TP. Exit först när Close blir den högsta stängningen av de senaste 7 handelsdagarna.',hidden_gate:'Egen CRT-inspirerad prototyp: dag 2 sveper under dag 1:s lägsta och stänger tillbaka över nivån; dag 3 stänger över dag 2:s högsta. Limitkurs vid dag 3:s stängning, SL vid dag 2:s lägsta. Inte Flux Charts exakta FVG/OB-metod.',nova:'Söker starkt rött ljus, ett litet pausljus och ett grönt genombrott över pausljusets högsta och första ljusets mitt. Pris över SMA 200. Limitköp vid bekräftelsens stängning.',engulfing:'Söker ett grönt ljus vars kropp omsluter föregående röda kropp. Mönsterträff – ingen färdig köpplan.',legend_livermore:'Livermore-inspirerad modell: daglig stängning över föregående 20 dagars högsta och över SMA 50. Limit vid signalstängning; SL vid lägsta av senaste tre dagar. Egen mekanisk tolkning.',legend_turtle:'Turtle-inspirerad modell: stängning över föregående 55 dagars högsta. Limit vid signalstängning, SL två ATR(20) under entry. Egen mekanisk tolkning.',legend_oneil:'O’Neil-inspirerad teknisk delmodell: kursen stänger över de föregående 50 dagarnas högsta, SMA 50 ligger över SMA 200 och ljuset är grönt. Entry vid stängning; SL lägsta av senaste 10 dagar. CAN SLIM:s fundamentala krav kontrolleras inte.',legend_raschke:'Raschke-inspirerad falsk nedbrytning: föregående dag bryter under tidigare 20 dagars lägsta och återtar nivån; nästa dag stänger över föregående dags högsta. SL vid utbrottsdagens lägsta. Egen mekanisk tolkning.',hammer:'Söker en liten kropp med lång nedre veke. Mönsterträff – ingen färdig köpplan.'}[key];
- const sets={deep_reclaim:[[37,57,17,116],[65,32,53,130],[22,42,12,86]],dd7:[[35,22,27,67],[58,23,49,91],[72,18,63,103]],inside_bar:[[30,70,16,116],[54,30,46,96],[54,30,46,96]],piercing:[[37,57,17,116],[65,32,53,130],[22,42,12,86]],hidden_gate:[[35,42,18,105],[70,26,44,132],[22,62,10,87]],nova:[[26,65,18,116],[77,9,57,122],[24,60,13,86]],engulfing:[[38,42,18,111],[25,70,15,121],[22,42,12,86]],hammer:[[37,57,17,116],[65,32,53,130],[35,16,15,131]]};
+ const sets={[65,32,53,130],[22,42,12,86]],dd7:[[35,22,27,67],[58,23,49,91],[72,18,63,103]],inside_bar:[[30,70,16,116],[54,30,46,96],[54,30,46,96]],piercing:[[37,57,17,116],[65,32,53,130],[22,42,12,86]],hidden_gate:[[35,42,18,105],[70,26,44,132],[22,62,10,87]],nova:[[26,65,18,116],[77,9,57,122],[24,60,13,86]],engulfing:[[38,42,18,111],[25,70,15,121],[22,42,12,86]],hammer:[[37,57,17,116],[65,32,53,130],[35,16,15,131]]};
  const vals=sets[key]||sets.piercing;for(let i=1;i<=3;i++){const [y,height,top,bottom]=vals[i-1];const rect=document.getElementById('ki-candle-b'+i),wick=document.getElementById('ki-candle-w'+i),x=30+(i-1)*50;rect.setAttribute('y',y);rect.setAttribute('height',height);wick.setAttribute('d','M'+x+' '+top+'V'+bottom);const red=(i===1)||(key==='hammer'&&i===2);rect.setAttribute('fill',red?'#fa647e':'#55e4b1');wick.setAttribute('stroke',red?'#fa7a8e':'#55e4b1');}}
  select.addEventListener('change',update);update();
 })();
@@ -858,7 +858,6 @@ updateControls();
  go(0);
 })();
 const focusStrategies=[
-['deep_reclaim','THE <span>DEEP RECLAIM</span>','🌊 Sweep. Reclaim. Confirm.','“The sweep reveals the opportunity. The close confirms it.”','Dag 2 öppnar på eller under första röda ljusets stängning, sveper under nivån och återtar den. Dag 3 bekräftar över röda ljusets öppning.'],
  ['piercing','THREE <span>CANDLE METHOD</span>','Clear. Confirm. Execute.<br>Tre ljus. En tydlig plan.','“The signal doesn’t make the trade. The context does.”','Tre ljus berättar en historia: först säljarna, sedan ett försök till vändning och till sist bekräftelsen. Vi planerar vår limitorder och risk innan vi handlar.'],
 ['inside_bar','GREEN <span>INSIDE BAR</span>','📦 Kompression → direkt utbrott.','“Small range. Clear level. Defined risk.”','Grön Inside Bar inom moderljuset. Entry direkt vid utbrott över Inside Barens High och initial SL vid dess Low.'],
 ['nova','NOVA <span>THE FIRST LIGHT</span>','✨ Den första gnistan efter mörkret.','“Every new trend begins with a first light.”','Experimentell strategi med tre ljus och trendfilter.'],
@@ -876,7 +875,6 @@ function paintFocus(){const f=focusStrategies[focusIndex],chart=document.getElem
  const red=(x,y,h,top,bottom)=>'<path d="M'+(x+9)+' '+top+'v'+(bottom-top)+'" stroke="#ff7882" stroke-width="3" stroke-linecap="round"/><rect x="'+x+'" y="'+y+'" width="18" height="'+h+'" rx="2" fill="#e85b6c"/>';
  const green=(x,y,h,top,bottom)=>'<path d="M'+(x+9)+' '+top+'v'+(bottom-top)+'" stroke="#48dfa9" stroke-width="3" stroke-linecap="round"/><rect x="'+x+'" y="'+y+'" width="18" height="'+h+'" rx="2" fill="#48dfa9"/>';
  let art='',label='';
- if(k==='deep_reclaim'){label='The Deep Reclaim: rött ljus, grön sweep under röd Close och tredje bekräftelseljus';art=red(15,34,53,16,106)+green(57,61,29,54,123)+green(99,22,42,12,78)+'<path d="M7 87h118" stroke="#f0d37b" stroke-width="1.7" stroke-dasharray="5 4"/><path d="M65 86v28l10-12" fill="none" stroke="#f0d37b" stroke-width="2"/><path d="M7 34h118" stroke="#c5e7e6" stroke-dasharray="4 4" opacity=".65"/>';}
   else if(k==='piercing'){label='Three Candle: rött signal-ljus, grönt återtag och bekräftelseljus';art=red(15,37,51,16,105)+green(57,57,35,52,117)+green(99,21,40,11,78)+'<path d="M7 37h118" stroke="#c5e7e6" stroke-dasharray="4 4" opacity=".65"/>';}
  else if(k==='inside_bar'){label='Green Inside Bar: mindre grönt ljus helt inom moderljuset';art=red(31,31,65,14,116)+green(78,55,27,43,94)+'<path d="M24 14h85M24 116h85" stroke="#c5e7e6" stroke-dasharray="4 4" opacity=".6"/>';}
  else if(k==='nova'){label='Nova: nedgång som planar ut och vänder upp';art=red(12,30,31,18,70)+red(43,55,25,44,91)+green(74,61,20,53,93)+green(103,35,38,24,85)+'<path d="M10 24L48 61L78 68L116 34" fill="none" stroke="#e6fff6" stroke-width="2" stroke-dasharray="4 4"/>';}
