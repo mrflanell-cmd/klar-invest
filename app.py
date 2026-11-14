@@ -642,3 +642,85 @@ def resume(job:str):
 @app.get("/api/scan/{job}")
 def progress(job:str):
     return JOBS.get(job,{"state":"missing","message":"Sökningen finns inte på servern"})
+
+
+# Independent foundation scanner: no trading patterns or order calculations.
+class BasicScanOptions(BaseModel):
+    nasdaq_stockholm: bool = True
+    first_north: bool = True
+    min_price: float = 10
+    max_price: float = 250
+
+BASIC_JOBS = {}
+
+def run_basic_scan(job_id, options):
+    job = BASIC_JOBS[job_id]
+    try:
+        items, note = universe("SE")
+        selected = []
+        seen = set()
+        for item in items:
+            exchange = item.get("exchange")
+            # Legacy OMXSTO feed includes NGM; exclude it explicitly.
+            if exchange == "OMXSTO" and not options.nasdaq_stockholm:
+                continue
+            if exchange == "FIRST_NORTH" and not options.first_north:
+                continue
+            if exchange not in ("OMXSTO", "FIRST_NORTH"):
+                continue
+            symbol = item["symbol"]
+            if symbol not in seen:
+                selected.append(item)
+                seen.add(symbol)
+        job["total"] = len(selected)
+        job["source_note"] = note
+        if not selected:
+            job["state"] = "done"
+            return
+        def check(item):
+            try:
+                bars = history(item, "SE")
+                last = bars[-1]
+                return item, last, None
+            except Exception as exc:
+                return item, None, str(exc)[:100]
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            for future in as_completed([pool.submit(check, item) for item in selected]):
+                item, last, error = future.result()
+                job["processed"] += 1
+                if error:
+                    job["errors"] += 1
+                    if len(job["error_examples"]) < 15:
+                        job["error_examples"].append(item["ticker"] + ": " + error)
+                else:
+                    job["checked"] += 1
+                    if options.min_price <= last["close"] <= options.max_price:
+                        job["results"].append({
+                            "ticker": item["ticker"], "name": item["name"],
+                            "symbol": item["symbol"], "exchange": item["exchange"],
+                            "date": last["date"], "close": round(last["close"], 4),
+                            "open": round(last["open"], 4),
+                            "high": round(last["high"], 4), "low": round(last["low"], 4)
+                        })
+        job["results"].sort(key=lambda x: (x["ticker"], x["exchange"]))
+        job["state"] = "done"
+    except Exception as exc:
+        job["state"] = "error"
+        job["message"] = str(exc)[:250]
+
+@app.post("/api/basic-scan")
+def start_basic_scan(o: BasicScanOptions):
+    if not (o.nasdaq_stockholm or o.first_north):
+        return {"error": "Välj minst en marknad"}
+    if not (0 <= o.min_price <= o.max_price <= 10000000):
+        return {"error": "Ogiltigt prisintervall"}
+    job_id = str(uuid.uuid4())
+    BASIC_JOBS[job_id] = {"state":"running","total":0,"processed":0,
+        "checked":0,"errors":0,"results":[],"error_examples":[],
+        "source_note":"","message":""}
+    threading.Thread(target=run_basic_scan,args=(job_id,o),daemon=True).start()
+    return {"job":job_id}
+
+@app.get("/api/basic-scan/{job_id}")
+def basic_scan_progress(job_id: str):
+    return BASIC_JOBS.get(job_id, {"state":"missing","message":"Sökningen finns inte"})
