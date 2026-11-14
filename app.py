@@ -315,15 +315,6 @@ def detect(bars,pattern,low,high):
         entry=red["open"]
         stop=red["close"]
         if entry<=stop:return None
-    elif pattern=="deep_reclaim":
-        if not (a["close"] < a["open"] and b["close"] > b["open"]
-                and b["open"] <= a["close"] and b["low"] < a["close"]
-                and a["close"] < b["close"] < a["open"]
-                and c["close"] > a["open"]):
-            return None
-        status="BEKRÄFTAD"
-        entry=a["open"]
-        stop=a["close"]
     elif pattern=="piercing":
         # LOCKED THREE CANDLE RULE:
         # a = Ljus 3 (tredje senaste), b = Ljus 2 (näst senaste), c = Ljus 1 (senaste).
@@ -367,7 +358,7 @@ def detect(bars,pattern,low,high):
         if not(body>0 and min(c["open"],c["close"])-c["low"]>=2*body and c["high"]-max(c["open"],c["close"])<=body):return None
         status="MÖNSTERTRÄFF";entry=c["open"]
     else:return None
-    return {"status":status,"date":c["date"],"stop":round(stop,4) if pattern in ("nova","hidden_gate","piercing","inside_bar","available_method","deep_reclaim") else round(b["low"],4),"strategy":pattern,"sma200":round(sma200,4) if pattern=="nova" else None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
+    return {"status":status,"date":c["date"],"stop":round(stop,4) if pattern in ("nova","hidden_gate","piercing","inside_bar","available_method") else round(b["low"],4),"strategy":pattern,"sma200":round(sma200,4) if pattern=="nova" else None,"entry":round(entry,4),"last_close":round(c["close"],4),"last_close_date":c["date"],"bars":bars[-3:]}
 
 def do_scan(job_id,options):
     job=JOBS[job_id]
@@ -625,7 +616,7 @@ def backtest(symbol:str,market:str="SE"):
 
 @app.post("/api/scan")
 def start(o:ScanOptions):
-    if o.market not in ("SE","US","COM") or o.pattern not in ("piercing","engulfing","hammer","nova","hidden_gate","available_method","deep_reclaim","inside_bar","dd7","legend_livermore","legend_turtle","legend_oneil","legend_raschke"):
+    if o.market not in ("SE","US","COM") or o.pattern not in ("piercing","engulfing","hammer","nova","hidden_gate","available_method","inside_bar","dd7","legend_livermore","legend_turtle","legend_oneil","legend_raschke"):
         return {"error":"Okända filter"}
     return {"job":new_job(o)}
 
