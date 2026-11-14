@@ -752,20 +752,24 @@ def run_basic_scan(job_id, options):
                                 and piercing["close"] < red["open"]):
                             continue
                         job["pattern_steps"]["piercing_second"] += 1
-                        if not (confirmation["close"] > confirmation["open"]
-                                and confirmation["close"] > red["open"]):
-                            continue
-                        job["pattern_steps"]["confirmed_third"] += 1
+                        confirmed = (confirmation["close"] > confirmation["open"]
+                                     and confirmation["close"] > red["open"])
+                        if confirmed:
+                            job["pattern_steps"]["confirmed_third"] += 1
                         job["results"].append({
                             "ticker": item["ticker"], "name": item["name"],
                             "symbol": item["symbol"], "exchange": item["exchange"],
                             "date": last["date"], "pattern": "three_candles",
+                            "confirmed": confirmed,
+                            "status": "BEKRÄFTAD" if confirmed else "EJ BEKRÄFTAD",
+                            "confirmation_close": round(confirmation["close"], 4),
+                            "confirmation_threshold": round(red["open"], 4),
                             "red_date": bars[-3]["date"], "piercing_date": bars[-2]["date"],
                             "close": round(last["close"], 4),
                             "open": round(last["open"], 4),
                             "high": round(last["high"], 4), "low": round(last["low"], 4)
                         })
-        job["results"].sort(key=lambda x: (x["ticker"], x["exchange"]))
+        job["results"].sort(key=lambda x: (not x["confirmed"], x["ticker"], x["exchange"]))
         job["state"] = "done"
     except Exception as exc:
         job["state"] = "error"
