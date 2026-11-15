@@ -753,6 +753,8 @@ def run_basic_scan(job_id, options):
                         candle = ("green" if last["close"] > last["open"] else
                                   "red" if last["close"] < last["open"] else "doji")
                         job["candle_counts"][candle] += 1
+                        if candle == "doji":
+                            job["doji_stocks"].append({"name": item["name"], "ticker": item["ticker"], "exchange": item["exchange"], "date": last["date"], "open": round(last["open"], 4), "close": round(last["close"], 4), "symbol": item["symbol"]})
                         if candle != "green":
                             continue
                         red, piercing, confirmation = bars[-3:]
@@ -798,7 +800,7 @@ def start_basic_scan(o: BasicScanOptions):
         return {"error": "Ogiltigt prisintervall"}
     job_id = str(uuid.uuid4())
     BASIC_JOBS[job_id] = {"state":"running","total":0,"processed":0,
-        "checked":0,"errors":0,"results":[],"error_examples":[],
+        "checked":0,"errors":0,"results":[],"doji_stocks":[],"error_examples":[],
         "source_note":"","message":"","warnings":[],"market_counts":{},
         "required_date":None,"in_range":0,"candle_counts":{"green":0,"red":0,"doji":0},
         "pattern_steps":{"red_first":0,"piercing_second":0,"confirmed_third":0},
