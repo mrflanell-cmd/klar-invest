@@ -11,6 +11,17 @@ from community_auth import router as community_router
 
 app=FastAPI(title="KLAR INVEST")
 app.include_router(community_router)
+
+@app.get("/assets/{image_name}")
+def strategy_asset(image_name: str):
+    """Serve only the two published strategy illustrations."""
+    from fastapi import HTTPException
+    allowed = {"three-candle-method.svg", "silent-pulse-method.svg"}
+    if image_name not in allowed:
+        raise HTTPException(status_code=404, detail="Unknown asset")
+    return FileResponse(Path(__file__).parent / "assets" / image_name,
+                        media_type="image/svg+xml", headers={"Cache-Control":"public, max-age=300"})
+
 JOBS={}
 TZ=ZoneInfo("Europe/Stockholm")
 class ScanOptions(BaseModel):
