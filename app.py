@@ -658,7 +658,9 @@ class BasicScanOptions(BaseModel):
     nasdaq_stockholm: bool = True
     first_north: bool = True
     min_price: float = 10
-    max_price: float = 250
+    max_price: float = 1000
+    ngm: bool = True
+    spotlight: bool = True
 
 BASIC_JOBS = {}
 
@@ -688,7 +690,9 @@ def run_basic_scan(job_id, options):
                 continue
             if exchange == "FIRST_NORTH" and not options.first_north:
                 continue
-            if exchange not in ("OMXSTO", "FIRST_NORTH"):
+            if exchange == "NGM" and not options.ngm:
+                continue
+            if exchange not in ("OMXSTO", "FIRST_NORTH", "NGM"):
                 continue
             symbol = item["symbol"]
             if symbol not in seen:
@@ -696,9 +700,14 @@ def run_basic_scan(job_id, options):
                 seen.add(symbol)
         job["market_counts"] = {
             "OMXSTO": sum(x.get("exchange") == "OMXSTO" for x in selected),
-            "FIRST_NORTH": sum(x.get("exchange") == "FIRST_NORTH" for x in selected)}
+            "FIRST_NORTH": sum(x.get("exchange") == "FIRST_NORTH" for x in selected),
+            "NGM": sum(x.get("exchange") == "NGM" for x in selected), "SPOTLIGHT": 0}
         job["total"] = len(selected)
         job["source_note"] = note
+        if options.spotlight:
+            job["warnings"].append("Spotlight saknar verifierad datakälla och ingår ännu inte i skanningen.")
+        if options.ngm and not job["market_counts"]["NGM"]:
+            job["warnings"].append("NGM saknar verifierade instrument i aktuell datakälla.")
         if options.first_north and not job["market_counts"]["FIRST_NORTH"]:
             job["warnings"].append("First North kunde inte hämtas eller verifieras. Täckningen är ofullständig.")
         if not selected:
@@ -777,7 +786,7 @@ def run_basic_scan(job_id, options):
 
 @app.post("/api/basic-scan")
 def start_basic_scan(o: BasicScanOptions):
-    if not (o.nasdaq_stockholm or o.first_north):
+    if not (o.nasdaq_stockholm or o.first_north or o.ngm or o.spotlight):
         return {"error": "Välj minst en marknad"}
     if not (0 <= o.min_price <= o.max_price <= 10000000):
         return {"error": "Ogiltigt prisintervall"}
