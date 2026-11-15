@@ -774,6 +774,8 @@ def run_basic_scan(job_id, options):
                             "confirmation_close": round(confirmation["close"], 4),
                             "confirmation_threshold": round(red["open"], 4),
                             "red_date": bars[-3]["date"], "piercing_date": bars[-2]["date"],
+                            "entry": round(red["open"],4), "stop": round(red["close"],4),
+                            "target_2r": round(red["open"]+2*(red["open"]-red["close"]),4),
                             "close": round(last["close"], 4),
                             "open": round(last["open"], 4),
                             "high": round(last["high"], 4), "low": round(last["low"], 4)
