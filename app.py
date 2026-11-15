@@ -762,7 +762,7 @@ def run_basic_scan(job_id, options):
                             continue
                         job["pattern_steps"]["red_first"] += 1
                         if not (piercing["close"] > piercing["open"]
-                                and piercing["open"] < red["close"]
+                                and piercing["open"] <= red["close"]
                                 and piercing["close"] > red["close"]
                                 and piercing["close"] < red["open"]):
                             continue
