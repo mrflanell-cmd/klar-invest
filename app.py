@@ -755,8 +755,6 @@ def run_basic_scan(job_id, options):
                         job["candle_counts"][candle] += 1
                         if candle == "doji":
                             job["doji_stocks"].append({"name": item["name"], "ticker": item["ticker"], "exchange": item["exchange"], "date": last["date"], "open": round(last["open"], 4), "close": round(last["close"], 4), "symbol": item["symbol"]})
-                        if candle != "green":
-                            continue
                         red, piercing, confirmation = bars[-3:]
                         if red["close"] >= red["open"]:
                             continue
@@ -767,8 +765,7 @@ def run_basic_scan(job_id, options):
                                 and piercing["close"] < red["open"]):
                             continue
                         job["pattern_steps"]["piercing_second"] += 1
-                        confirmed = (confirmation["close"] > confirmation["open"]
-                                     and confirmation["close"] > red["open"])
+                        confirmed = confirmation["close"] > red["open"]
                         if confirmed:
                             job["pattern_steps"]["confirmed_third"] += 1
                         job["results"].append({
