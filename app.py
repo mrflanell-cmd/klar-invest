@@ -665,6 +665,7 @@ class BasicScanOptions(BaseModel):
     max_price: float = 1000
     ngm: bool = True
     spotlight: bool = True
+    method: str = "three_candles"  # Original method remains the default.
 
 BASIC_JOBS = {}
 
@@ -682,6 +683,34 @@ def matches_three_candles(bars):
         and confirm["close"] > confirm["open"]
         and confirm["close"] > red["open"]
     )
+
+def rsi_with_sma_at_confirmation(bars, length=14, ma_length=14):
+    """TradingView-style Wilder RSI(14), SMA(14) of RSI, on closed daily candles.
+    Uses all supplied history for Wilder smoothing; no future candles.
+    """
+    closes = [float(bar["close"]) for bar in bars]
+    if len(closes) < length + ma_length:
+        return None
+    changes = [closes[i] - closes[i-1] for i in range(1, len(closes))]
+    gain = sum(max(x, 0) for x in changes[:length]) / length
+    loss = sum(max(-x, 0) for x in changes[:length]) / length
+    def value(g, l):
+        if g == 0 and l == 0:
+            return 50.0
+        if l == 0:
+            return 100.0
+        if g == 0:
+            return 0.0
+        return 100.0 - 100.0 / (1.0 + g / l)
+    values = [value(gain, loss)]
+    for delta in changes[length:]:
+        gain = (gain * (length - 1) + max(delta, 0)) / length
+        loss = (loss * (length - 1) + max(-delta, 0)) / length
+        values.append(value(gain, loss))
+    if len(values) < ma_length:
+        return None
+    return values[-1], sum(values[-ma_length:]) / ma_length
+
 
 def run_basic_scan(job_id, options):
     job = BASIC_JOBS[job_id]
@@ -766,16 +795,37 @@ def run_basic_scan(job_id, options):
                             continue
                         job["pattern_steps"]["piercing_second"] += 1
                         confirmed = confirmation["close"] > red["open"]
+                        rsi_info = None
+                        if options.method == "silent_pulse":
+                            # No doji: strictly green/below MA or red/above MA.
+                            if not confirmed:
+                                continue
+                            rsi_info = rsi_with_sma_at_confirmation(bars)
+                            if rsi_info is None:
+                                job["rsi_missing"] += 1
+                                continue
+                            rsi, rsi_ma = rsi_info
+                            rsi_pass = (
+                                (confirmation["close"] > confirmation["open"] and rsi < rsi_ma)
+                                or (confirmation["close"] < confirmation["open"] and rsi > rsi_ma)
+                            )
+                            if not rsi_pass:
+                                job["rsi_rejected"] += 1
+                                continue
+                            job["rsi_approved"] += 1
                         if confirmed:
                             job["pattern_steps"]["confirmed_third"] += 1
                         job["results"].append({
                             "ticker": item["ticker"], "name": item["name"],
                             "symbol": item["symbol"], "exchange": item["exchange"],
-                            "date": last["date"], "pattern": "three_candles",
+                            "date": last["date"], "pattern": options.method,
                             "confirmed": confirmed,
                             "status": "BEKRÄFTAD" if confirmed else "EJ BEKRÄFTAD",
                             "confirmation_close": round(confirmation["close"], 4),
                             "confirmation_threshold": round(red["open"], 4),
+                            "confirmation_color": "green" if confirmation["close"] > confirmation["open"] else "red" if confirmation["close"] < confirmation["open"] else "doji",
+                            "rsi": round(rsi_info[0], 2) if rsi_info else None,
+                            "rsi_ma": round(rsi_info[1], 2) if rsi_info else None,
                             "red_date": bars[-3]["date"], "piercing_date": bars[-2]["date"],
                             "entry": round(red["open"],4), "stop": round(red["close"],4),
                             "target_2r": round(red["open"]+2*(red["open"]-red["close"]),4),
@@ -791,6 +841,8 @@ def run_basic_scan(job_id, options):
 
 @app.post("/api/basic-scan")
 def start_basic_scan(o: BasicScanOptions):
+    if o.method not in ("three_candles", "silent_pulse"):
+        return {"error": "Okänd metod"}
     if not (o.nasdaq_stockholm or o.first_north or o.ngm or o.spotlight):
         return {"error": "Välj minst en marknad"}
     if not (0 <= o.min_price <= o.max_price <= 10000000):
@@ -801,7 +853,8 @@ def start_basic_scan(o: BasicScanOptions):
         "source_note":"","message":"","warnings":[],"market_counts":{},
         "required_date":None,"in_range":0,"candle_counts":{"green":0,"red":0,"doji":0},
         "pattern_steps":{"red_first":0,"piercing_second":0,"confirmed_third":0},
-        "error_categories":{"inaktuell":0,"saknad":0,"annat":0}}
+        "error_categories":{"inaktuell":0,"saknad":0,"annat":0},
+        "rsi_approved":0,"rsi_rejected":0,"rsi_missing":0}
     threading.Thread(target=run_basic_scan,args=(job_id,o),daemon=True).start()
     return {"job":job_id}
 
