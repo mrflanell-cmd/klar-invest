@@ -476,6 +476,10 @@ def new_job(options):
 def root():
     return Path("index.html").read_text(encoding="utf-8")
 
+@app.get("/wisdom365.js")
+def wisdom365_js():
+    return FileResponse("wisdom365.js", media_type="application/javascript")
+
 @app.get("/community", response_class=HTMLResponse)
 def community_page():
     return Path("community.html").read_text(encoding="utf-8")
