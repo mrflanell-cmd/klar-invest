@@ -1,4 +1,4 @@
-<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000"><title>KLAR INVEST – Svensk aktiescreener</title><style>
+<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000"><title>KLAR INVEST – Piercing Line Trading</title><style>
 *{box-sizing:border-box}body{margin:0;background:#071826;color:#eaf7fb;font:16px system-ui,-apple-system,Arial,sans-serif}main{max-width:850px;margin:0 auto;padding:30px 16px 80px}h1{font-size:clamp(32px,8vw,48px);margin:0}h1 span{color:#35dfab}.sub{color:#a8c7d4;margin:5px 0 28px}.panel{background:#0e293b;border:1px solid #285268;border-radius:20px;padding:22px;margin:18px 0}h2{font-size:21px;margin:0 0 20px}label{display:block;margin:12px 0}.check{display:flex;gap:12px;align-items:center}.check input{width:21px;height:21px;accent-color:#35dfab}.prices{display:grid;grid-template-columns:1fr 1fr;gap:16px}.prices input{width:100%;margin-top:7px;padding:13px;border-radius:10px;border:1px solid #547387;background:#071826;color:white;font-size:18px}button{border:0;border-radius:12px;background:#35dfab;color:#071826;font-size:17px;font-weight:700;padding:15px 22px;cursor:pointer;width:100%;margin-top:15px}button:disabled{opacity:.55;cursor:wait}.muted{color:#aac5d1;font-size:14px}progress{width:100%;height:22px;accent-color:#35dfab}.stats{display:flex;flex-wrap:wrap;gap:12px;margin:15px 0}.stat{padding:12px;background:#16374b;border-radius:10px}table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;border-bottom:1px solid #285268;padding:11px 7px}th{color:#a8c7d4}a{color:#6de4bd}.scroll{overflow-x:auto;max-width:100%}#rows td:first-child{overflow-wrap:anywhere}.detail{margin:8px 0;font-size:13px;color:#a8c7d4}.error-details{margin-top:10px}.error-details summary{cursor:pointer;color:#ffd59c}.error-details pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px system-ui}.scroll{overflow-x:auto}.warning{color:#ffd59c}#result{display:none}@media(max-width:500px){.panel{padding:16px}.prices{gap:9px}td,th{padding:9px 5px}table{min-width:540px}.stats{display:grid;grid-template-columns:1fr 1fr}.stat{font-size:13px}}
 :root{color-scheme:dark}body{background:radial-gradient(ellipse at top right,#223047,#070f1a 65%);color:#f7f1e5}main{max-width:1000px}.panel{background:linear-gradient(140deg,#101e2d,#0b1522);border-color:#9d7a3e;box-shadow:0 12px 35px #0005}h1 span,.gold{color:#f5c76b}button{background:linear-gradient(95deg,#bc8c3b,#ffdc87,#bc8c3b);color:#171408}.check input,progress{accent-color:#e9bc61}.eyebrow{font-size:12px;letter-spacing:2px;color:#eac375}.quote{font:italic clamp(22px,4vw,32px) Georgia,serif;color:#f5cf80}.book-controls{display:flex;align-items:center;gap:12px}.book-controls button{width:auto;margin:0}.book-controls input,.risk-input{padding:10px;background:#081724;color:white;border:1px solid #9d7a3e;border-radius:8px;max-width:145px}.risk-fields{display:flex;gap:14px;flex-wrap:wrap}:root{color-scheme:dark}body{background:radial-gradient(ellipse at top right,#475237,#202b20 58%,#151d16);color:#f2f1df}.panel{background:linear-gradient(140deg,#33402c,#202b21);border-color:#7b8b63}h1 span,.gold,.quote,.eyebrow{color:#d3e5a9}button{background:linear-gradient(95deg,#819a62,#d1e4a4,#819a62);color:#172315}.check input,progress{accent-color:#c0d794}.prices input,.risk-input,.book-controls input{background:#1d291e;border-color:#8da277}.stat{background:#35452f}a{color:#d1e5a5}.small-action{display:block;width:100%;padding:9px;margin:5px 0;border:0;border-radius:8px;background:#bbd08e;color:#1b2718;text-align:center;text-decoration:none;font-size:13px;font-weight:700;cursor:pointer}.scroll table{min-width:850px}
 /* OLIVE SIMPLE — mobile first, one-tap scan */
@@ -104,7 +104,7 @@ html,body{background:#000!important}main{background:transparent!important}
 
 /* KLAR INVEST: compact editorial strategy selector */
 #pattern-panel{padding:18px!important}
-#strategy-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:9px!important}
+#strategy-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
 #strategy-grid .strategy-choice{min-width:0!important;min-height:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;padding:7px!important;margin:0!important;border-radius:12px!important;gap:5px!important;box-shadow:none!important}
 #strategy-grid .strategy-choice-image{display:block!important;width:100%!important;height:auto!important;aspect-ratio:640/370!important;object-fit:contain!important;border-radius:8px!important}
 #strategy-grid .strategy-choice strong{font-size:clamp(11px,2.7vw,14px)!important;line-height:1.2!important;text-align:center!important;overflow-wrap:anywhere!important}
@@ -116,17 +116,20 @@ html,body{background:#000!important}main{background:transparent!important}
 #strategy-trade-rules{display:block!important;background:transparent!important;color:#fff!important;border:0!important;border-top:1px solid #627b6d!important;border-radius:0!important;box-shadow:none!important;padding:12px 0 0!important;margin:12px 0 0!important;font-size:14px!important;font-weight:600!important;line-height:1.5!important}
 #strategy-caveat{color:#e1eae4!important;font-size:13px!important;line-height:1.5!important;margin:10px 0 0!important}
 @media(max-width:520px){#strategy-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important}#strategy-grid .strategy-choice{padding:5px!important}#strategy-explanation{padding:14px!important}}
+
+/* PIERCING FOCUS */
+#strategy-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}#pattern-panel{border-color:#587963!important}#strategy-grid .strategy-choice{min-width:0}#strategy-grid .strategy-choice-image{width:100%;height:auto;max-height:180px;object-fit:contain}#strategy-explanation{line-height:1.7}#strategy-explanation li{margin:8px 0}@media(max-width:480px){#strategy-grid{gap:9px!important}#strategy-grid .strategy-choice{padding:8px!important}}
 </style></head><body><main><div class="language-bar"><label for="language-select" id="language-label">Språk</label><select id="language-select" aria-label="Välj språk"><option value="sv">🇸🇪 Svenska</option><option value="en">🇬🇧 English</option></select></div><p class="eyebrow">DIN TRADINGDESK</p><h1>KLAR <span>INVEST</span></h1><p class="sub">En tydlig plan. Ett klick till nästa möjlighet.</p><section class="panel" id="book-panel"><p class="eyebrow">📖 365 DAYS OF TRADING WISDOM · KARL NORBERG</p><p id="book-date"></p><p class="quote" id="book-quote"></p><p id="book-lesson"></p><p class="gold" id="book-question"></p><div class="book-controls"><button type="button" id="prev-day">←</button><label>Dag <input id="book-day" type="number" min="1" max="365"></label><button type="button" id="next-day">→</button></div><p class="muted">365 dagar med tradinglärdomar och inspiration</p></section>
 <section class="panel" id="pattern-panel">
-<h2>Formationer – klicka för att visa träffar</h2>
-<p class="muted">En scanning söker alla tre formationer. Välj sedan bild för att filtrera resultaten.</p>
+<h2>Piercing Line – välj signaltyp</h2>
+<p class="muted">En scanning söker båda Piercing-varianterna. Välj formation för att se signaler och regler.</p>
 <div class="strategy-choice-grid" id="strategy-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
 <button type="button" class="strategy-choice is-selected" data-pattern="three_candles" aria-pressed="true"><img class="strategy-choice-image" src="/assets/three-candle-method.svg" alt="Piercing Line med tre riktiga ljus och bekräftelse" loading="eager"><strong>Piercing Line</strong><small data-count="three_candles">0 träffar</small></button>
-<button type="button" class="strategy-choice" data-pattern="bullish_engulfing" aria-pressed="false"><img class="strategy-choice-image" src="/assets/bullish-engulfing-method.svg" alt="Bullish Engulfing med röd candle följd av större grön candle" loading="eager"><strong>Bullish Engulfing</strong><small data-count="bullish_engulfing">0 träffar</small></button>
-<button type="button" class="strategy-choice" data-pattern="inside_bar" aria-pressed="false"><img class="strategy-choice-image" src="/assets/green-inside-bar-method.svg" alt="Green Inside Bar med röd mother bar och bekräftelse" loading="eager"><strong>Green Inside Bar</strong><small data-count="inside_bar">0 träffar</small></button>
+<button type="button" class="strategy-choice" data-pattern="piercing_bullish" aria-pressed="false"><img class="strategy-choice-image" src="/assets/three-candle-method.svg" alt="Bullish Piercing med rött och grönt ljus" loading="eager"><strong>Piercing Bullish</strong><small data-count="piercing_bullish">0 träffar</small></button>
+
 </div><div class="strategy-description" id="strategy-explanation" aria-live="polite"><h3 id="strategy-search-title">EXAKT DETTA SÖKER SCANNERN</h3><ol id="strategy-rules"></ol><div class="rsi-note" id="strategy-trade-rules"></div><p class="muted" id="strategy-caveat"></p></div>
 </section><section class="panel" id="settings-panel"><button id="settings-toggle" type="button">⚙️ Marknader och filter</button><h2>1. Välj marknader</h2><label class="check"><input type="checkbox" id="stockholm" checked> Nasdaq Stockholm</label><label class="check"><input type="checkbox" id="firstnorth" checked> First North Sweden</label><label class="check"><input type="checkbox" id="ngm"> NGM – Nordic SME / Main Regulated</label><label class="check"><input type="checkbox" id="spotlight"> Spotlight (datakälla ännu ej verifierad)</label>
-<h2 style="margin-top:22px">2. Välj metod</h2><label for="method">Strategi</label><select id="method" style="display:block;width:100%;margin:9px 0 14px;padding:12px;background:#1d2b22;color:#edf7ed;border:1px solid #425c49;border-radius:10px"><option value="three_candles">Three Candle Method · Original</option><option value="silent_pulse">Silent Pulse · RSI Confirmation</option></select><p class="muted" id="method-info">Originalmetoden – ingen RSI-filtrering.</p><h2 style="margin-top:28px">3. Aktiekurs (SEK)</h2><div class="prices"><label>Från<input id="min" type="number" min="0" step="0.01" value="10"></label><label>Till<input id="max" type="number" min="0" step="0.01" value="1000"></label></div><p class="muted">Söker de tre senaste avslutade dagsljusen: 1) rött, 2) grönt som öppnar under och stänger över det rödas stängning men under dess öppning, 3) grönt som stänger över första ljusets öppning. Visar även kandidater där steg 3 ännu inte bekräftats. Gröna och röda räknarna gäller senaste ljuset inom prisintervallet.</p><button id="start">SÖK AKTIER →</button></section>
+<h2 style="margin-top:22px">2. Aktiekurs (SEK)</h2><div class="prices"><label>Från<input id="min" type="number" min="0" step="0.01" value="10"></label><label>Till<input id="max" type="number" min="0" step="0.01" value="1000"></label></div><p class="muted">Scannar både vår bekräftade treljusmetod och klassisk Piercing Bullish med två ljus och 50 %-regel. Endast avslutade dagsljus används.</p><button id="start">SÖK AKTIER →</button></section>
 <div id="extras"><button id="risk-toggle" type="button">⚖️ Välj risk</button><button id="book-toggle" type="button">📖 Dagens visdom</button></div><section class="panel" id="risk-panel"><h2>⚖️ Max risk per affär</h2><div class="risk-fields"><label>Max risk (kr)<input class="risk-input" id="risk-max" type="number" value="150" min="1"></label></div><p class="gold" id="risk-output">Välj endast max risk. Entry och SL hämtas automatiskt från varje träffs röda ljus.</p></section><section class="panel" id="result"><h2>Dina möjligheter</h2><p id="scan-method-summary" class="scan-method-summary">Metod: –</p><p id="state">Förbereder...</p><progress id="bar" max="100" value="0"></progress><div class="stats"><div class="stat" id="pct">0 %</div><div class="stat" id="checked">0 kontrollerade</div><div class="stat" id="hits">0 träffar</div></div><p class="detail" id="patternSteps"></p><p class="muted" id="source"></p><p class="detail" id="coverage"></p><p class="warning" id="warning"></p><div class="scroll"><table><thead><tr><th>Aktie</th><th>Marknad</th><th>Status</th><th>Senaste datum</th><th>Stängning</th><th>Handelsplan</th><th>Genvägar</th></tr></thead><tbody id="rows"></tbody></table></div></section>
 </main><script src="/wisdom365.js"></script><script>
 const $=id=>document.getElementById(id);
@@ -143,23 +146,14 @@ const patternDescriptions={
   trade:'Entry: dag 1:s öppning (limit vid återtest). SL: dag 1:s stängning. TP: 2R. Köpantal beräknas från vald maxrisk, normalt 150 kr.',
   note:'Endast bekräftade treljusformationer visas. Ingen nedre veke eller 50-procentsregel krävs.'
  },
- bullish_engulfing:{
+ piercing_bullish:{
   steps:[
-   'Dag 1 – rött ljus: stängning under öppning.',
-   'Dag 2 – grönt ljus: öppnar strikt under dag 1:s stängning.',
-   'Dag 2 stänger strikt över dag 1:s öppning. Den gröna kroppen omsluter hela den röda kroppen.'
+   'Dag 1 – rött ljus: stänger under öppningen.',
+   'Dag 2 – grönt ljus: öppnar på eller under det röda ljusets stängning.',
+   'Dag 2 stänger över mitten av den röda kroppen, men under dess öppning.'
   ],
-  trade:'Entry: dag 1:s öppning vid återtest. SL: dag 1:s stängning. TP: 2R. Köpantal utifrån vald maxrisk, normalt 150 kr.',
-  note:'Tvåljusformation utan tredje bekräftelseljus. Scannern visar setup, inte en separat bekräftad vändning.'
- },
- inside_bar:{
-  steps:[
-   'Dag 1 – rött mother bar: stängning under öppning.',
-   'Dag 2 – grönt inside bar: stängning över öppning. Hela dess high–low ligger strikt innanför dag 1:s high–low.',
-   'Dag 3 – bekräftelse: stänger över dag 1:s öppning. Ljusets färg spelar ingen roll.'
-  ],
-  trade:'Entry: dag 1:s öppning (limit vid återtest). SL: dag 1:s stängning. TP: 2R. Köpantal utifrån vald maxrisk, normalt 150 kr.',
-  note:'Inside bar avser här hela kursintervallet (high/low), inte enbart ljuskroppen.'
+  trade:'Klassisk tvåljusformation. Entry vid röda ljusets öppning på återtest, SL vid dess stängning, TP 2R. Risk kan justeras.',
+  note:'Visas som SETUP utan separat bekräftelseljus. Detta är klassisk bullish piercing med 50 %-regel, inte en verifierad kopia av TradingViews interna screener.'
  }
 };
 function updateStrategyExplanation(){
@@ -255,7 +249,7 @@ async function run(){
  if(!options.nasdaq_stockholm&&!options.first_north&&!options.ngm){alert('Välj minst en verifierad marknad');return}
  if(!Number.isFinite(min)||!Number.isFinite(max)||min<0||max<min){alert('Kontrollera prisintervallet');return}
  button.disabled=true;scanResults=[];renderMatches();
- $('result').style.display='block';text('scan-method-summary','Gemensam scanning: Piercing Line · Bullish Engulfing · Green Inside Bar');
+ $('result').style.display='block';text('scan-method-summary','Gemensam scanning: Piercing Line · Piercing Bullish');
  text('state','Startar scanning...');text('warning','');
  try{
   const response=await fetch('/api/unified-scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(options)});
@@ -274,7 +268,7 @@ async function run(){
    if(data.state==='done'||data.state==='error'||data.state==='missing'){
     text('warning',[...(data.warnings||[]),...(data.message?[data.message]:[])].join(' '));
     scanResults=data.results||[];
-    for(const p of ['three_candles','bullish_engulfing','inside_bar'])document.querySelector('[data-count="'+p+'"]').textContent=scanResults.filter(x=>x.pattern===p).length+' träffar';
+    for(const p of ['three_candles','piercing_bullish'])document.querySelector('[data-count="'+p+'"]').textContent=scanResults.filter(x=>x.pattern===p).length+' träffar';
     renderMatches();break;
    }
   }
