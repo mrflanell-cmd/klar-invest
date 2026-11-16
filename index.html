@@ -101,6 +101,17 @@ html,body{background:#000!important}main{background:transparent!important}
 @media(max-width:440px){.strategy-choice-image{height:108px}.strategy-choice{min-height:180px!important;padding:8px 6px!important}.strategy-choice strong{font-size:12px!important}}
 
 #strategy-grid .strategy-choice{min-height:0!important;padding:8px!important;gap:7px!important}#strategy-grid .strategy-choice-image{height:auto!important;aspect-ratio:640/370;object-fit:contain;width:100%;border-radius:10px}#strategy-grid .strategy-choice strong{font-size:clamp(11px,2.5vw,15px)!important}#strategy-grid .strategy-choice small{font-size:11px!important}@media(max-width:520px){#strategy-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}} 
+
+/* Large charts and crisp white detailed strategy explanations */
+#strategy-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important}
+#strategy-grid .strategy-choice{padding:12px!important}
+#strategy-grid .strategy-choice-image{width:100%!important;aspect-ratio:640/370!important;object-fit:contain!important}
+#strategy-explanation{background:#1e3029!important;color:#fff!important;border:1px solid #3f594c!important;border-radius:16px!important;padding:20px!important;margin-top:20px!important;line-height:1.65!important}
+#strategy-explanation h3,#strategy-explanation li,#strategy-trade-rules,#strategy-caveat{color:#fff!important}
+#strategy-explanation li{margin-bottom:10px!important}
+#strategy-trade-rules{font-weight:650!important;border-top:1px solid #607569!important;padding-top:14px!important}
+#strategy-caveat{opacity:.92!important}
+@media(max-width:520px){#strategy-grid{grid-template-columns:1fr!important}}
 </style></head><body><main><div class="language-bar"><label for="language-select" id="language-label">Språk</label><select id="language-select" aria-label="Välj språk"><option value="sv">🇸🇪 Svenska</option><option value="en">🇬🇧 English</option></select></div><p class="eyebrow">DIN TRADINGDESK</p><h1>KLAR <span>INVEST</span></h1><p class="sub">En tydlig plan. Ett klick till nästa möjlighet.</p><section class="panel" id="book-panel"><p class="eyebrow">📖 365 DAYS OF TRADING WISDOM · KARL NORBERG</p><p id="book-date"></p><p class="quote" id="book-quote"></p><p id="book-lesson"></p><p class="gold" id="book-question"></p><div class="book-controls"><button type="button" id="prev-day">←</button><label>Dag <input id="book-day" type="number" min="1" max="365"></label><button type="button" id="next-day">→</button></div><p class="muted">365 dagar med tradinglärdomar och inspiration</p></section>
 <section class="panel" id="pattern-panel">
 <h2>Formationer – klicka för att visa träffar</h2>
