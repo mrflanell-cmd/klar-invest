@@ -16,7 +16,7 @@ app.include_router(community_router)
 def strategy_asset(image_name: str):
     """Serve published strategy illustrations."""
     from fastapi import HTTPException
-    allowed = {"three-candle-method.svg", "silent-pulse-method.svg", "bearish-engulfing-method.svg", "green-inside-bar-method.svg"}
+    allowed = {"three-candle-method.svg", "silent-pulse-method.svg", "bearish-engulfing-method.svg", "green-inside-bar-method.svg", "bullish-engulfing-method.svg"}
     if image_name not in allowed:
         raise HTTPException(status_code=404, detail="Unknown asset")
     return FileResponse(Path(__file__).parent / "assets" / image_name,
