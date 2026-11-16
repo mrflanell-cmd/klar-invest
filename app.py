@@ -872,3 +872,106 @@ def start_basic_scan(o: BasicScanOptions):
 @app.get("/api/basic-scan/{job_id}")
 def basic_scan_progress(job_id: str):
     return BASIC_JOBS.get(job_id, {"state":"missing","message":"Sökningen finns inte"})
+
+
+def unified_patterns(bars):
+    """Return independent signals based on completed daily candles."""
+    out = []
+    if len(bars) < 3:
+        return out
+    red, green, confirm = bars[-3:]
+    if (red["close"] < red["open"] and green["close"] > green["open"]
+        and green["open"] <= red["close"] and red["close"] < green["close"] < red["open"]
+        and confirm["close"] > red["open"]):
+        out.append(("three_candles", red, confirm))
+    if (red["close"] < red["open"] and green["close"] > green["open"]
+        and green["high"] < red["high"] and green["low"] > red["low"]
+        and confirm["close"] > red["open"]):
+        out.append(("inside_bar", red, confirm))
+    first, engulf = bars[-2:]
+    if (first["close"] > first["open"] and engulf["close"] < engulf["open"]
+        and engulf["open"] >= first["close"] and engulf["close"] < first["open"]):
+        out.append(("bearish_engulfing", engulf, engulf))
+    return out
+
+def run_unified_scan(job_id, options):
+    job = BASIC_JOBS[job_id]
+    try:
+        items, note = universe("SE")
+        allowed = set()
+        if options.nasdaq_stockholm: allowed.add("OMXSTO")
+        if options.first_north: allowed.add("FIRST_NORTH")
+        if options.ngm: allowed.add("NGM")
+        selected = list({x["symbol"]:x for x in items if x.get("exchange") in allowed}.values())
+        job["total"] = len(selected)
+        job["source_note"] = note
+        job["market_counts"] = {k:sum(x.get("exchange")==k for x in selected)
+                                for k in ("OMXSTO","FIRST_NORTH","NGM")}
+        if options.spotlight:
+            job["warnings"].append("Spotlight saknar verifierad datakälla.")
+        if options.first_north and not job["market_counts"]["FIRST_NORTH"]:
+            job["warnings"].append("First North kunde inte verifieras; ofullständig täckning.")
+        if not selected:
+            raise ValueError("Inga instrument i de valda marknaderna.")
+        now = dt.datetime.now(TZ)
+        required = now.date() if now.time() >= dt.time(18,15) else now.date()-dt.timedelta(days=1)
+        while required.weekday() >= 5:
+            required -= dt.timedelta(days=1)
+        job["required_date"] = str(required)
+        def check(item):
+            try:
+                bars = history(item, "SE")
+                if not bars or dt.date.fromisoformat(bars[-1]["date"]) < required:
+                    return item,None,"Inaktuell kurs"
+                return item,bars,None
+            except Exception as exc:
+                return item,None,str(exc)[:100]
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            for future in as_completed([pool.submit(check,item) for item in selected]):
+                item,bars,error=future.result()
+                job["processed"] += 1
+                if error:
+                    job["errors"] += 1
+                    if len(job["error_examples"]) < 15:
+                        job["error_examples"].append(item["ticker"]+": "+error)
+                    continue
+                job["checked"] += 1
+                last=bars[-1]
+                if not options.min_price <= last["close"] <= options.max_price:
+                    continue
+                job["in_range"] += 1
+                for method,red,signal in unified_patterns(bars):
+                    entry,stop=red["open"],red["close"]
+                    if entry <= stop:
+                        continue
+                    job["results"].append({
+                        "ticker":item["ticker"],"name":item["name"],
+                        "symbol":item["symbol"],"exchange":item.get("exchange"),
+                        "date":last["date"],"pattern":method,
+                        "confirmed":True,"status":"BEKRÄFTAD" if method!="bearish_engulfing" else "SETUP – EJ BEKRÄFTAD",
+                        "entry":round(entry,4),"stop":round(stop,4),
+                        "target_2r":round(entry+2*(entry-stop),4),
+                        "close":round(last["close"],4)
+                    })
+        job["results"].sort(key=lambda x:(x["pattern"],x["ticker"]))
+        job["state"]="done"
+    except Exception as exc:
+        job["state"]="error"
+        job["message"]=str(exc)[:250]
+
+@app.post("/api/unified-scan")
+def start_unified_scan(o: BasicScanOptions):
+    if not (o.nasdaq_stockholm or o.first_north or o.ngm):
+        return {"error":"Välj minst en verifierad marknad"}
+    if not (0 <= o.min_price <= o.max_price <= 10000000):
+        return {"error":"Ogiltigt prisintervall"}
+    job_id=str(uuid.uuid4())
+    BASIC_JOBS[job_id]={"state":"running","total":0,"processed":0,"checked":0,
+        "errors":0,"results":[],"error_examples":[],"source_note":"",
+        "message":"","warnings":[],"market_counts":{},"required_date":None,"in_range":0}
+    threading.Thread(target=run_unified_scan,args=(job_id,o),daemon=True).start()
+    return {"job":job_id}
+
+@app.get("/api/unified-scan/{job_id}")
+def unified_scan_progress(job_id: str):
+    return BASIC_JOBS.get(job_id,{"state":"missing","message":"Sökningen finns inte"})

@@ -100,58 +100,52 @@ html,body{background:#000!important}main{background:transparent!important}
 .strategy-choice strong{margin-top:5px}
 @media(max-width:440px){.strategy-choice-image{height:108px}.strategy-choice{min-height:180px!important;padding:8px 6px!important}.strategy-choice strong{font-size:12px!important}}
 </style></head><body><main><div class="language-bar"><label for="language-select" id="language-label">Språk</label><select id="language-select" aria-label="Välj språk"><option value="sv">🇸🇪 Svenska</option><option value="en">🇬🇧 English</option></select></div><p class="eyebrow">DIN TRADINGDESK</p><h1>KLAR <span>INVEST</span></h1><p class="sub">En tydlig plan. Ett klick till nästa möjlighet.</p><section class="panel" id="book-panel"><p class="eyebrow">📖 365 DAYS OF TRADING WISDOM · KARL NORBERG</p><p id="book-date"></p><p class="quote" id="book-quote"></p><p id="book-lesson"></p><p class="gold" id="book-question"></p><div class="book-controls"><button type="button" id="prev-day">←</button><label>Dag <input id="book-day" type="number" min="1" max="365"></label><button type="button" id="next-day">→</button></div><p class="muted">365 dagar med tradinglärdomar och inspiration</p></section>
-<section class="panel" id="pattern-panel"><div class="strategy-choice-grid" role="group" aria-label="Välj en av två scannermetoder">
-<button type="button" class="strategy-choice is-selected" id="choose-original" aria-pressed="true"><img class="strategy-choice-image" src="/assets/three-candle-method.svg" alt="Tre ljus: rött, grönt, bekräftelse och entry vid röda ljusets öppning" loading="eager"><strong>1 · Three Candle</strong><small>Originalmetoden</small></button>
-<button type="button" class="strategy-choice" id="choose-pulse" aria-pressed="false"><img class="strategy-choice-image" src="/assets/silent-pulse-method.svg" alt="Tre ljus med blå RSI-linje och gul RSI-medelvärdeslinje" loading="eager"><strong>2 · Silent Pulse</strong><small>Med RSI-filter</small></button>
-</div>
-<div class="strategy-switch" role="group" aria-label="Byt scannermetod"><button type="button" class="strategy-arrow" id="method-prev" aria-label="Föregående metod">‹</button><div class="strategy-center"><small id="strategy-index">METOD 1 AV 2</small><strong id="strategy-title">Three Candle Method</strong></div><button type="button" class="strategy-arrow" id="method-next" aria-label="Nästa metod">›</button></div>
-<svg id="strategy-art" viewBox="0 0 620 340" role="img" aria-label="Treljusformation med köp, stop loss och bekräftelse" xmlns="http://www.w3.org/2000/svg">
-<defs><linearGradient id="artbg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f7faf4"/><stop offset="1" stop-color="#e7f1e8"/></linearGradient><linearGradient id="redc" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f47d70"/><stop offset="1" stop-color="#b83b38"/></linearGradient><linearGradient id="greenc" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#7dd1a0"/><stop offset="1" stop-color="#2e875f"/></linearGradient></defs>
-<rect width="620" height="340" rx="18" fill="url(#artbg)"/><path d="M0 270Q145 210 270 260T620 230V340H0Z" fill="#bed8c4" opacity=".25"/>
-<g stroke="#d6e2d8" stroke-width="1"><path d="M20 65H600M20 110H600M20 155H600M20 200H600M20 245H600"/></g>
-<line x1="35" y1="105" x2="586" y2="105" stroke="#b58b48" stroke-width="3" stroke-dasharray="9 6"/><text x="38" y="93" font-size="15" font-weight="700" fill="#805b26">ENTRY · RÖD ÖPPNING</text>
-<line x1="35" y1="217" x2="586" y2="217" stroke="#c16d65" stroke-width="2" stroke-dasharray="7 6"/><text x="38" y="237" font-size="14" font-weight="700" fill="#9b4841">STOP LOSS · RÖD STÄNGNING</text>
-<g stroke-linecap="round"><line x1="140" y1="65" x2="140" y2="255" stroke="#aa413d" stroke-width="6"/><rect x="111" y="105" width="58" height="112" rx="5" fill="url(#redc)"/><line x1="310" y1="159" x2="310" y2="264" stroke="#398c63" stroke-width="6"/><rect x="281" y="176" width="58" height="65" rx="5" fill="url(#greenc)"/><line x1="480" y1="60" x2="480" y2="190" stroke="#398c63" stroke-width="6"/><rect x="451" y="85" width="58" height="95" rx="5" fill="url(#greenc)"/></g>
-<g fill="#304c3b" font-size="16" font-weight="750" text-anchor="middle"><text x="140" y="292">1 · RÖTT</text><text x="310" y="292">2 · GRÖNT</text><text x="480" y="292">3 · BEKRÄFTELSE</text></g><text x="310" y="318" text-anchor="middle" font-size="12" fill="#69806d">Illustration av prisvillkoren · inte verkliga kurser</text>
-<g id="pulse-rsi-art" visibility="hidden"><rect x="30" y="16" width="560" height="53" rx="10" fill="#ffffff" opacity=".95"/><path d="M50 52C110 58 150 26 210 41S330 62 390 36S500 55 565 28" fill="none" stroke="#2b75c8" stroke-width="4"/><path d="M50 41Q170 42 290 45T565 45" fill="none" stroke="#d4a32e" stroke-width="4" stroke-dasharray="6 4"/><text x="52" y="28" font-size="12" fill="#345a43" font-weight="700">RSI BLÅ / MA GUL</text></g>
-</svg>
-<div class="strategy-description"><h3 id="strategy-search-title">EXAKT DETTA SÖKER SCANNERN</h3><ol id="strategy-rules"><li>Dag 1: Rött dagsljus – stängning under öppning.</li><li>Dag 2: Grönt dagsljus som öppnar på eller under dag 1:s stängning och stänger över den, men under dag 1:s öppning.</li><li>Dag 3: Stänger över dag 1:s öppning. Bekräftelseljuset får vara rött eller grönt.</li></ol><div class="rsi-note" id="strategy-rsi">Ingen RSI-filtrering i originalmetoden.</div></div><p class="method-locked">← Byt metod med pilarna → · Scanningen använder metoden som visas här.</p><div class="pattern-head"><div><p class="eyebrow">STRATEGIN VI SÖKER</p><h2>Three Candle Method</h2></div><span class="pattern-tag">1D · 3 LJUS</span></div><svg viewBox="0 0 600 310" role="img" aria-label="Tre ljus: första rött, andra grönt som öppnar under första ljusets stängning och stänger under första ljusets öppning, tredje grönt och stänger över första ljusets öppning." xmlns="http://www.w3.org/2000/svg"><rect width="600" height="310" rx="18" fill="#111915"/><g font-family="system-ui,sans-serif" font-size="15" text-anchor="middle" fill="#cad7cc"><text x="110" y="35">1 · RÖTT</text><text x="290" y="35">2 · GRÖNT</text><text x="470" y="35">3 · BEKRÄFTELSE</text></g><g stroke="#3b5a47" stroke-width="2" stroke-dasharray="6 6"><path d="M35 103H565"/><path d="M35 207H565"/></g><g font-family="system-ui,sans-serif" font-size="12" fill="#b9c9bc"><text x="40" y="93">ENTRY · RÖD ÖPPNING</text><text x="40" y="224">SL · RÖD STÄNGNING</text></g><g stroke-width="5" stroke-linecap="round"><path stroke="#ec6d67" d="M110 73V243"/><path stroke="#8fce95" d="M290 170V266"/><path stroke="#8fce95" d="M470 54V191"/></g><rect x="85" y="103" width="50" height="104" rx="4" fill="#dc615c"/><rect x="265" y="159" width="50" height="85" rx="4" fill="#85c98e"/><rect x="445" y="74" width="50" height="93" rx="4" fill="#85c98e"/><g fill="#cad7cc" font-family="system-ui,sans-serif" font-size="12" text-anchor="middle"><text x="110" y="283">Öppnar högt</text><text x="290" y="283">Öppnar under SL</text><text x="470" y="283">Stänger över entry</text></g></svg><div class="pattern-rules"><span><b>KÖP</b> Rött ljus öppning</span><span><b>SL</b> Rött ljus stängning</span><span><b>TP</b> 2R</span></div><p class="pattern-foot">Bekräftat efter tredje dagens stängning. Limitorder inför nästa handelsdag.</p></section><section class="panel" id="settings-panel"><button id="settings-toggle" type="button">⚙️ Marknader och filter</button><h2>1. Välj marknader</h2><label class="check"><input type="checkbox" id="stockholm" checked> Nasdaq Stockholm</label><label class="check"><input type="checkbox" id="firstnorth" checked> First North Sweden</label><label class="check"><input type="checkbox" id="ngm" checked> NGM – Nordic SME / Main Regulated</label><label class="check"><input type="checkbox" id="spotlight" checked> Spotlight (datakälla ännu ej verifierad)</label>
+<section class="panel" id="pattern-panel">
+<h2>Formationer – klicka för att visa träffar</h2>
+<p class="muted">En scanning söker alla tre formationer. Välj sedan bild för att filtrera resultaten.</p>
+<div class="strategy-choice-grid" id="strategy-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+<button type="button" class="strategy-choice is-selected" data-pattern="three_candles" aria-pressed="true"><span class="strategy-choice-art" aria-hidden="true">🔴 🟢 🟢</span><strong>Piercing Line</strong><small data-count="three_candles">0 träffar</small></button>
+<button type="button" class="strategy-choice" data-pattern="bearish_engulfing" aria-pressed="false"><span class="strategy-choice-art" aria-hidden="true">🟢 🔴</span><strong>Bearish Engulfing</strong><small data-count="bearish_engulfing">0 träffar</small></button>
+<button type="button" class="strategy-choice" data-pattern="inside_bar" aria-pressed="false"><span class="strategy-choice-art" aria-hidden="true">🔴 ▪️🟢 🟢</span><strong>Green Inside Bar</strong><small data-count="inside_bar">0 träffar</small></button>
+</div><p class="muted" id="selected-pattern-info">Piercing Line: tre ljus med bekräftelse över röda öppningen.</p>
+</section><section class="panel" id="settings-panel"><button id="settings-toggle" type="button">⚙️ Marknader och filter</button><h2>1. Välj marknader</h2><label class="check"><input type="checkbox" id="stockholm" checked> Nasdaq Stockholm</label><label class="check"><input type="checkbox" id="firstnorth" checked> First North Sweden</label><label class="check"><input type="checkbox" id="ngm"> NGM – Nordic SME / Main Regulated</label><label class="check"><input type="checkbox" id="spotlight"> Spotlight (datakälla ännu ej verifierad)</label>
 <h2 style="margin-top:22px">2. Välj metod</h2><label for="method">Strategi</label><select id="method" style="display:block;width:100%;margin:9px 0 14px;padding:12px;background:#1d2b22;color:#edf7ed;border:1px solid #425c49;border-radius:10px"><option value="three_candles">Three Candle Method · Original</option><option value="silent_pulse">Silent Pulse · RSI Confirmation</option></select><p class="muted" id="method-info">Originalmetoden – ingen RSI-filtrering.</p><h2 style="margin-top:28px">3. Aktiekurs (SEK)</h2><div class="prices"><label>Från<input id="min" type="number" min="0" step="0.01" value="10"></label><label>Till<input id="max" type="number" min="0" step="0.01" value="1000"></label></div><p class="muted">Söker de tre senaste avslutade dagsljusen: 1) rött, 2) grönt som öppnar under och stänger över det rödas stängning men under dess öppning, 3) grönt som stänger över första ljusets öppning. Visar även kandidater där steg 3 ännu inte bekräftats. Gröna och röda räknarna gäller senaste ljuset inom prisintervallet.</p><button id="start">SÖK AKTIER →</button></section>
 <div id="extras"><button id="risk-toggle" type="button">⚖️ Välj risk</button><button id="book-toggle" type="button">📖 Dagens visdom</button></div><section class="panel" id="risk-panel"><h2>⚖️ Max risk per affär</h2><div class="risk-fields"><label>Max risk (kr)<input class="risk-input" id="risk-max" type="number" value="150" min="1"></label></div><p class="gold" id="risk-output">Välj endast max risk. Entry och SL hämtas automatiskt från varje träffs röda ljus.</p></section><section class="panel" id="result"><h2>Dina möjligheter</h2><p id="scan-method-summary" class="scan-method-summary">Metod: –</p><p id="state">Förbereder...</p><progress id="bar" max="100" value="0"></progress><div class="stats"><div class="stat" id="pct">0 %</div><div class="stat" id="checked">0 kontrollerade</div><div class="stat" id="hits">0 träffar</div></div><p class="detail" id="patternSteps"></p><p class="muted" id="source"></p><p class="detail" id="coverage"></p><p class="warning" id="warning"></p><div class="scroll"><table><thead><tr><th>Aktie</th><th>Marknad</th><th>Status</th><th>Senaste datum</th><th>Stängning</th><th>Handelsplan</th><th>Genvägar</th></tr></thead><tbody id="rows"></tbody></table></div></section>
 </main><script src="/wisdom365.js"></script><script>
 const $=id=>document.getElementById(id);
 const text=(id,value)=>$(id).textContent=value;
 const button=$('start');
-const methodSelect=$('method');
-const methodOrder=['three_candles','silent_pulse'];
-let activeScanMethod=null;
-function updateStrategyView(){
- const pulse=methodSelect.value==='silent_pulse';
- $('choose-original').classList.toggle('is-selected',!pulse);
- $('choose-pulse').classList.toggle('is-selected',pulse);
- $('choose-original').setAttribute('aria-pressed',String(!pulse));
- $('choose-pulse').setAttribute('aria-pressed',String(pulse));
- text('strategy-index','METOD '+(pulse?'2':'1')+' AV 2');
- text('strategy-title',pulse?'Silent Pulse':'Three Candle Method');
- text('strategy-search-title',pulse?'EXAKT DETTA SÖKER SILENT PULSE':'EXAKT DETTA SÖKER ORIGINALMETODEN');
- document.querySelector('#pattern-panel h2').textContent=pulse?'Silent Pulse – RSI Confirmation':'Three Candle Method';
- $('strategy-rules').innerHTML='<li><b>Dag 1:</b> Rött ljus, stängning under öppning.</li><li><b>Dag 2:</b> Grönt ljus, öppning på eller under dag 1:s stängning, stängning över dag 1:s stängning men under dag 1:s öppning.</li><li><b>Dag 3:</b> Stängning över dag 1:s öppning. Rött eller grönt bekräftelselj us.</li>'.replace('bekräftelselj us','bekräftelseljus');
- text('strategy-rsi',pulse?'EXTRA RSI-FILTER VID DAG 3:S STÄNGNING: 🟢 Grönt bekräftelselj us → blå RSI(14) UNDER gula RSI-SMA(14). 🔴 Rött bekräftelselj us → blå RSI ÖVER gula RSI-SMA. Doji och saknade RSI-värden utesluts.'.replaceAll('bekräftelselj us','bekräftelseljus'):'ORIGINAL: Ingen RSI-filtrering. Bekräftelsen styrs av stängningspriset, inte ljusets färg.');
- $('pulse-rsi-art').setAttribute('visibility',pulse?'visible':'hidden');
- text('method-info',pulse?'RSI(14) med SMA(14) på RSI – separat metod.':'Originalmetoden – ingen RSI-filtrering.');
+let selectedPattern='three_candles', scanResults=[];
+const patternDescriptions={
+ three_candles:'Piercing Line: tre ljus, bekräftelse över röda öppningen.',
+ bearish_engulfing:'Bearish Engulfing: grön följd av röd omslutning. Konträr long-setup, ingen bekräftelse.',
+ inside_bar:'Green Inside Bar: grön innanför röd high/low, sedan stängning över röda öppningen.'
+};
+function selectPattern(p){
+ selectedPattern=p;
+ document.querySelectorAll('#strategy-grid [data-pattern]').forEach(b=>{
+  const active=b.dataset.pattern===p;b.classList.toggle('is-selected',active);b.setAttribute('aria-pressed',String(active));
+ });
+ text('selected-pattern-info',patternDescriptions[p]);
+ renderMatches();
 }
-function chooseMethod(value){if(button.disabled)return;methodSelect.value=value;updateStrategyView();}
-$('choose-original').addEventListener('click',()=>chooseMethod('three_candles'));
-$('choose-pulse').addEventListener('click',()=>chooseMethod('silent_pulse'));
-function shiftMethod(delta){
- if(button.disabled)return;
- const next=(methodOrder.indexOf(methodSelect.value)+delta+methodOrder.length)%methodOrder.length;
- methodSelect.value=methodOrder[next];updateStrategyView();
+document.querySelectorAll('#strategy-grid [data-pattern]').forEach(b=>b.addEventListener('click',()=>selectPattern(b.dataset.pattern)));
+function renderMatches(){
+ const body=$('rows');body.replaceChildren();
+ const matches=scanResults.filter(x=>x.pattern===selectedPattern);
+ text('hits',matches.length+' träffar i vald formation');
+ for(const item of matches){
+  const tr=document.createElement('tr');
+  const fields=[item.name+' ('+item.ticker+')',item.exchange==='FIRST_NORTH'?'First North':item.exchange==='NGM'?'NGM':'Stockholm',item.status,item.date,item.close+' kr'];
+  fields.forEach(v=>{const td=document.createElement('td');td.textContent=String(v);tr.append(td)});
+  const plan=document.createElement('td');plan.className='trade-plan';const p=tradePlan(item);plan.textContent=p?formatPlan(p):'Ingen giltig handelsplan';
+  tr.dataset.ticker=item.ticker;tr._scanItem=item;tr.append(plan);
+  const td=document.createElement('td');
+  const tv=document.createElement('a');tv.href='https://www.tradingview.com/chart/?symbol='+encodeURIComponent('OMXSTO:'+item.ticker.replaceAll(' ','_'));tv.target='_blank';tv.rel='noopener noreferrer';tv.textContent='TradingView';td.append(tv);
+  const av=document.createElement('a');av.href='https://www.avanza.se/';av.target='_blank';av.rel='noopener noreferrer';av.textContent='Avanza sök';av.className='small-action';av.addEventListener('click',()=>{if(navigator.clipboard?.writeText)navigator.clipboard.writeText(item.name||item.ticker).catch(()=>{});});td.append(av);
+  tr.append(td);body.append(tr);
+ }
 }
-$('method-prev').addEventListener('click',()=>shiftMethod(-1));
-$('method-next').addEventListener('click',()=>shiftMethod(1));
-methodSelect.addEventListener('change',updateStrategyView);
-updateStrategyView();
 $('settings-toggle').onclick=()=>{$('settings-panel').classList.toggle('is-open')};$('risk-toggle').onclick=()=>{$('risk-panel').classList.toggle('is-open')};$('book-toggle').onclick=()=>{$('book-panel').classList.toggle('is-open')};
 const wisdom=window.KLAR_WISDOM||[];
 let language='sv';
@@ -193,7 +187,7 @@ async function pollJob(job){
  for(;;){
   await wait(1800);
   try{
-   const r=await fetch('/api/basic-scan/'+encodeURIComponent(job),{cache:'no-store'});
+   const r=await fetch('/api/unified-scan/'+encodeURIComponent(job),{cache:'no-store'});
    if(!r.ok)throw Error('Serverfel '+r.status);
    const data=await r.json();
    failures=0;
@@ -208,44 +202,35 @@ async function pollJob(job){
 }
 async function run(){
  const min=Number($('min').value),max=Number($('max').value);
- const scanMethod=methodSelect.value;
- const options={nasdaq_stockholm:$('stockholm').checked,first_north:$('firstnorth').checked,ngm:$('ngm').checked,spotlight:$('spotlight').checked,min_price:min,max_price:max,method:scanMethod};
- if(!options.nasdaq_stockholm&&!options.first_north&&!options.ngm&&!options.spotlight){alert('Välj minst en marknad');return}
+ const options={nasdaq_stockholm:$('stockholm').checked,first_north:$('firstnorth').checked,ngm:$('ngm').checked,spotlight:$('spotlight').checked,min_price:min,max_price:max};
+ if(!options.nasdaq_stockholm&&!options.first_north&&!options.ngm){alert('Välj minst en verifierad marknad');return}
  if(!Number.isFinite(min)||!Number.isFinite(max)||min<0||max<min){alert('Kontrollera prisintervallet');return}
- activeScanMethod=scanMethod; text('scan-method-summary','Aktiv scanning: '+(scanMethod==='silent_pulse'?'Silent Pulse – tre ljus + RSI-filter':'Three Candle Method – tre ljus utan RSI-filter'));
- button.disabled=true;$('method-prev').disabled=true;$('method-next').disabled=true;$('choose-original').disabled=true;$('choose-pulse').disabled=true;$('result').style.display='block';$('result').scrollIntoView({behavior:'smooth',block:'start'});text('state','Startar scanning...');$('rows').replaceChildren();text('warning','');text('coverage','');text('patternSteps','');
+ button.disabled=true;scanResults=[];renderMatches();
+ $('result').style.display='block';text('scan-method-summary','Gemensam scanning: Piercing Line · Bearish Engulfing · Green Inside Bar');
+ text('state','Startar scanning...');text('warning','');
  try{
-  const response=await fetch('/api/basic-scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(options)});
+  const response=await fetch('/api/unified-scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(options)});
   if(!response.ok)throw Error('Serverfel '+response.status);
-  const start=await response.json();if(start.error)throw Error(start.error);
+  const started=await response.json();if(started.error)throw Error(started.error);
   for(;;){
-   const data=await pollJob(start.job);
+   await wait(1800);
+   const res=await fetch('/api/unified-scan/'+encodeURIComponent(started.job),{cache:'no-store'});
+   if(!res.ok)throw Error('Kunde inte hämta scanningen');
+   const data=await res.json();
    const percent=data.total?Math.min(100,Math.round(data.processed/data.total*100)):0;
-   $('bar').value=percent;text('pct',percent+' %');text('checked',(data.checked||0)+' av '+(data.total||'?')+' instrument med giltiga kurser');text('hits',(data.results||[]).filter(x=>x.confirmed).length+' bekräftade');   const steps=data.pattern_steps||{};text('patternSteps','Treljuskontroll: rött första ljus '+(steps.red_first||0)+' · korrekt andra ljus '+(steps.piercing_second||0)+' · bekräftat tredje ljus '+(steps.confirmed_third||0)+(scanMethod==='silent_pulse'?' · RSI godkända '+(data.rsi_approved||0)+' · RSI bortsorterade '+(data.rsi_rejected||0)+' · RSI-data saknas '+(data.rsi_missing||0):''));text('source',data.source_note||'Hämtar aktielistan...');
-   const counts=data.market_counts||{};text('coverage','Nasdaq Stockholm: '+(counts.OMXSTO??'–')+' · First North: '+(counts.FIRST_NORTH??'–')+' · NGM: '+(counts.NGM??'–')+' · Spotlight: ej täckt · Förväntad handelsdag: '+(data.required_date||'–'));
-   text('state',data.state==='done'?'Scanning klar':data.state==='error'?'Scanning misslyckades':'Kontrollerat '+(data.processed||0)+' av '+(data.total||'?')+' instrument');
+   $('bar').value=percent;text('pct',percent+' %');text('checked',(data.checked||0)+' av '+(data.total||'?')+' kontrollerade');
+   text('state',data.state==='done'?'Scanning klar':data.state==='error'?'Scanning misslyckades':'Scannar '+(data.processed||0)+' av '+(data.total||'?'));
+   text('source',data.source_note||'Hämtar aktier...');
+   const c=data.market_counts||{};text('coverage','Stockholm '+(c.OMXSTO??'–')+' · First North '+(c.FIRST_NORTH??'–')+' · NGM '+(c.NGM??'–')+' · Senaste handelsdag '+(data.required_date||'–'));
    if(data.state==='done'||data.state==='error'||data.state==='missing'){
-    if(data.state!=='done')text('warning',data.message||'Okänt fel');
-    const warnings=[...(data.warnings||[])];
-    if(data.state!=='done'&&data.message)warnings.push(data.message);
-    text('warning',warnings.join(' '));
-
-    const body=$('rows');
-    for(const item of data.results||[]){
-      if(!item.confirmed)continue;
-      const tr=document.createElement('tr');
-      for(const value of [item.name+' ('+item.ticker+')',item.exchange==='FIRST_NORTH'?'First North':item.exchange==='NGM'?'NGM':'Stockholm',item.confirmed?'✅ Bekräftad':'⏳ Ej bekräftad',item.date,item.close+' kr'+(scanMethod==='silent_pulse'?' · RSI '+item.rsi+' / MA '+item.rsi_ma+' ('+(item.confirmation_color==='green'?'grön':'röd')+')':'')]){
-       const td=document.createElement('td');td.textContent=safe(value);tr.append(td);
-      }
-
-      const plan=document.createElement('td');plan.className='trade-plan';const p=tradePlan(item);plan.textContent=p?formatPlan(p):'Kunde inte beräkna handelsplan';tr.dataset.ticker=item.ticker;tr._scanItem=item;tr.append(plan);const td=document.createElement('td'),a=document.createElement('a');
-      a.href='https://www.tradingview.com/chart/?symbol='+encodeURIComponent((item.exchange==='NGM'?'NGM':'OMXSTO')+':'+item.ticker.replaceAll(' ','_'));a.target='_blank';a.rel='noopener noreferrer';a.textContent='TradingView';td.append(a);const avanza=document.createElement('a');avanza.href='https://www.avanza.se/';avanza.target='_blank';avanza.rel='noopener noreferrer';avanza.textContent='Avanza sök';avanza.className='small-action';avanza.title='Öppna Avanza och kopiera aktiens namn';avanza.addEventListener('click',()=>{const name=item.name||item.ticker;if(navigator.clipboard?.writeText){navigator.clipboard.writeText(name).catch(()=>{try{const field=document.createElement('textarea');field.value=name;document.body.append(field);field.select();document.execCommand('copy');field.remove();}catch(e){}})}else{try{const field=document.createElement('textarea');field.value=name;document.body.append(field);field.select();document.execCommand('copy');field.remove();}catch(e){}}});td.append(avanza);tr.append(td);body.append(tr);
-    }
-    break;
+    text('warning',[...(data.warnings||[]),...(data.message?[data.message]:[])].join(' '));
+    scanResults=data.results||[];
+    for(const p of ['three_candles','bearish_engulfing','inside_bar'])document.querySelector('[data-count="'+p+'"]').textContent=scanResults.filter(x=>x.pattern===p).length+' träffar';
+    renderMatches();break;
    }
   }
  }catch(e){text('state','Fel vid scanning');text('warning',e.message)}
- finally{button.disabled=false;$('method-prev').disabled=false;$('method-next').disabled=false;$('choose-original').disabled=false;$('choose-pulse').disabled=false;activeScanMethod=null}
+ finally{button.disabled=false}
 }
 button.addEventListener('click',run);applyLanguage();
 </script></body></html>
