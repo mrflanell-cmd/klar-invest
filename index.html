@@ -261,9 +261,9 @@ async function run(){
    if(!res.ok)throw Error('Kunde inte hämta scanningen');
    const data=await res.json();
    const percent=data.total?Math.min(100,Math.round(data.processed/data.total*100)):0;
-   $('bar').value=percent;text('pct',percent+' %');text('checked',(data.checked||0)+' av '+(data.total||'?')+' kontrollerade');
-   text('state',data.state==='done'?'Scanning klar':data.state==='error'?'Scanning misslyckades':'Scannar '+(data.processed||0)+' av '+(data.total||'?'));
-   text('source',data.source_note||'Hämtar aktier...');
+   $('bar').value=percent;text('pct',percent+' %');text('checked',data.total?(data.checked||0)+' av '+data.total+' kontrollerade':'Inväntar aktielista');
+   text('state',data.state==='done'?'Scanning klar':data.state==='error'?'Scanning misslyckades':!data.total?(data.stage||'Hämtar instrumentlista…'):'Scannar '+(data.processed||0)+' av '+data.total);
+   text('source',data.source_note||(data.stage||'Hämtar aktier…'));
    const c=data.market_counts||{};text('coverage','Stockholm '+(c.OMXSTO??'–')+' · First North '+(c.FIRST_NORTH??'–')+' · NGM '+(c.NGM??'–')+' · Senaste handelsdag '+(data.required_date||'–'));
    if(data.state==='done'||data.state==='error'||data.state==='missing'){
     text('warning',[...(data.warnings||[]),...(data.message?[data.message]:[])].join(' '));
