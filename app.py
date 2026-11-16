@@ -897,7 +897,9 @@ def unified_patterns(bars):
 def run_unified_scan(job_id, options):
     job = BASIC_JOBS[job_id]
     try:
+        job["stage"] = "Hämtar instrumentlista från datakällorna (kan ta en stund)"
         items, note = universe("SE")
+        job["stage"] = "Instrumentlista hämtad – kontrollerar dagskurser"
         allowed = set()
         if options.nasdaq_stockholm: allowed.add("OMXSTO")
         if options.first_north: allowed.add("FIRST_NORTH")
@@ -955,8 +957,10 @@ def run_unified_scan(job_id, options):
                     })
         job["results"].sort(key=lambda x:(x["pattern"],x["ticker"]))
         job["state"]="done"
+        job["stage"]="Scanning färdig"
     except Exception as exc:
         job["state"]="error"
+        job["stage"]="Scanning misslyckades"
         job["message"]=str(exc)[:250]
 
 @app.post("/api/unified-scan")
@@ -968,7 +972,7 @@ def start_unified_scan(o: BasicScanOptions):
     job_id=str(uuid.uuid4())
     BASIC_JOBS[job_id]={"state":"running","total":0,"processed":0,"checked":0,
         "errors":0,"results":[],"error_examples":[],"source_note":"",
-        "message":"","warnings":[],"market_counts":{},"required_date":None,"in_range":0}
+        "message":"","stage":"Startar instrumenthämtning","warnings":[],"market_counts":{},"required_date":None,"in_range":0}
     threading.Thread(target=run_unified_scan,args=(job_id,o),daemon=True).start()
     return {"job":job_id}
 
