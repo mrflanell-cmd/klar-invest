@@ -884,14 +884,14 @@ def unified_patterns(bars):
         and green["open"] <= red["close"] and red["close"] < green["close"] < red["open"]
         and confirm["close"] > red["open"]):
         out.append(("three_candles", red, confirm))
-    if (red["close"] < red["open"] and green["close"] > green["open"]
-        and green["high"] < red["high"] and green["low"] > red["low"]
-        and confirm["close"] > red["open"]):
-        out.append(("inside_bar", red, confirm))
-    first, engulf = bars[-2:]
-    if (first["close"] < first["open"] and engulf["close"] > engulf["open"]
-        and engulf["open"] < first["close"] and engulf["close"] > first["open"]):
-        out.append(("bullish_engulfing", first, engulf))
+    # Classic bullish piercing: green candle opens at/below the red close,
+    # closes above the red body's midpoint, but below the red open.
+    first, piercing = bars[-2:]
+    midpoint = (first["open"] + first["close"]) / 2
+    if (first["close"] < first["open"] and piercing["close"] > piercing["open"]
+        and piercing["open"] <= first["close"]
+        and midpoint < piercing["close"] < first["open"]):
+        out.append(("piercing_bullish", first, piercing))
     return out
 
 def run_unified_scan(job_id, options):
@@ -948,7 +948,7 @@ def run_unified_scan(job_id, options):
                         "ticker":item["ticker"],"name":item["name"],
                         "symbol":item["symbol"],"exchange":item.get("exchange"),
                         "date":last["date"],"pattern":method,
-                        "confirmed":method!="bullish_engulfing","status":"BEKRÄFTAD" if method!="bullish_engulfing" else "SETUP – EJ BEKRÄFTAD",
+                        "confirmed":method=="three_candles","status":"BEKRÄFTAD" if method=="three_candles" else "SETUP – EJ BEKRÄFTAD",
                         "entry":round(entry,4),"stop":round(stop,4),
                         "target_2r":round(entry+2*(entry-stop),4),
                         "close":round(last["close"],4)
