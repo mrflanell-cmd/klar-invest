@@ -892,6 +892,10 @@ def unified_patterns(bars):
         and piercing["open"] <= first["close"]
         and midpoint < piercing["close"] < first["open"]):
         out.append(("piercing_bullish", first, piercing))
+    # Daily bullish manipulation: second candle sweeps prior low, then closes above prior high.
+    prior, reversal = bars[-2:]
+    if (reversal["low"] < prior["low"] and reversal["close"] > prior["high"]):
+        out.append(("tom_camp_long_1d", prior, reversal))
     return out
 
 def run_unified_scan(job_id, options):
@@ -943,14 +947,20 @@ def run_unified_scan(job_id, options):
                     continue
                 job["in_range"] += 1
                 for method,red,signal in unified_patterns(bars):
-                    entry,stop=red["open"],red["close"]
+                    # The manipulation setup uses its own candle's close as the
+                    # confirmation level and sweep low as the protective stop.
+                    # Existing Piercing trade plans remain untouched.
+                    if method == "tom_camp_long_1d":
+                        entry,stop=signal["close"],signal["low"]
+                    else:
+                        entry,stop=red["open"],red["close"]
                     if entry <= stop:
                         continue
                     job["results"].append({
                         "ticker":item["ticker"],"name":item["name"],
                         "symbol":item["symbol"],"exchange":item.get("exchange"),
                         "date":last["date"],"pattern":method,
-                        "confirmed":method=="three_candles","status":"BEKRÄFTAD" if method=="three_candles" else "SETUP – EJ BEKRÄFTAD",
+                        "confirmed":method in ("three_candles","tom_camp_long_1d"),"status":"BEKRÄFTAD" if method in ("three_candles","tom_camp_long_1d") else "SETUP – EJ BEKRÄFTAD",
                         "entry":round(entry,4),"stop":round(stop,4),
                         "target_2r":round(entry+2*(entry-stop),4),
                         "close":round(last["close"],4)
