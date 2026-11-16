@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 370" role="img" aria-label="Bullish manipulation: sweep below previous low and close above previous high">
+<rect width="640" height="370" rx="20" fill="#f4f8f2"/>
+<g stroke="#dce7dd" stroke-width="1"><path d="M30 70H610M30 140H610M30 210H610M30 280H610"/></g>
+<path d="M70 155H580" stroke="#a77d39" stroke-dasharray="8 7" stroke-width="2"/>
+<path d="M70 272H580" stroke="#8e9f92" stroke-dasharray="8 7" stroke-width="2"/>
+<g stroke="#c65c54" stroke-width="7" stroke-linecap="round"><path d="M230 135V275"/></g>
+<rect x="207" y="174" width="46" height="65" rx="3" fill="#c65c54"/>
+<g stroke="#268c64" stroke-width="7" stroke-linecap="round"><path d="M394 62V310"/></g>
+<rect x="371" y="95" width="46" height="147" rx="3" fill="#268c64"/>
+<path d="M435 304Q482 290 500 238" fill="none" stroke="#268c64" stroke-width="4" stroke-linecap="round"/>
+<path d="M489 245L500 234L504 250" fill="none" stroke="#268c64" stroke-width="4" stroke-linejoin="round"/>
+<g fill="#284a39" font-family="Arial,sans-serif" font-size="21" text-anchor="middle"><text x="230" y="340">Dag 1</text><text x="394" y="340">Dag 2</text></g>
+<g fill="#446b55" font-family="Arial,sans-serif" font-size="17"><text x="470" y="88">Close &gt; High 1</text><text x="470" y="302">Low 2 &lt; Low 1</text></g>
+</svg>
