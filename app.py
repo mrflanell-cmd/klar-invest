@@ -889,9 +889,9 @@ def unified_patterns(bars):
         and confirm["close"] > red["open"]):
         out.append(("inside_bar", red, confirm))
     first, engulf = bars[-2:]
-    if (first["close"] > first["open"] and engulf["close"] < engulf["open"]
-        and engulf["open"] >= first["close"] and engulf["close"] < first["open"]):
-        out.append(("bearish_engulfing", engulf, engulf))
+    if (first["close"] < first["open"] and engulf["close"] > engulf["open"]
+        and engulf["open"] < first["close"] and engulf["close"] > first["open"]):
+        out.append(("bullish_engulfing", first, engulf))
     return out
 
 def run_unified_scan(job_id, options):
@@ -948,7 +948,7 @@ def run_unified_scan(job_id, options):
                         "ticker":item["ticker"],"name":item["name"],
                         "symbol":item["symbol"],"exchange":item.get("exchange"),
                         "date":last["date"],"pattern":method,
-                        "confirmed":True,"status":"BEKRÄFTAD" if method!="bearish_engulfing" else "SETUP – EJ BEKRÄFTAD",
+                        "confirmed":method!="bullish_engulfing","status":"BEKRÄFTAD" if method!="bullish_engulfing" else "SETUP – EJ BEKRÄFTAD",
                         "entry":round(entry,4),"stop":round(stop,4),
                         "target_2r":round(entry+2*(entry-stop),4),
                         "close":round(last["close"],4)
