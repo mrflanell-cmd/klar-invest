@@ -937,8 +937,6 @@ def run_unified_scan(job_id, options):
                 while job.get("state") == "paused":
                     time.sleep(0.25)
                 if job.get("state") == "stopped":
-                    for pending in pool._threads if False else []:
-                        pass
                     break
                 item,bars,error=future.result()
                 job["processed"] += 1
