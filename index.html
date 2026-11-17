@@ -119,6 +119,7 @@ html,body{background:#000!important}main{background:transparent!important}
 
 /* PIERCING FOCUS */
 #strategy-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}#pattern-panel{border-color:#587963!important}#strategy-grid .strategy-choice{min-width:0}#strategy-grid .strategy-choice-image{width:100%;height:auto;max-height:180px;object-fit:contain}#strategy-explanation{line-height:1.7}#strategy-explanation li{margin:8px 0}@media(max-width:480px){#strategy-grid{gap:9px!important}#strategy-grid .strategy-choice{padding:8px!important}}
+.scan-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.scan-controls button{margin:0!important;background:#25322b!important;color:#e7efe8!important;border:1px solid #506457!important}.scan-controls button:disabled{opacity:.45}.scan-controls.is-hidden{display:none}
 </style></head><body><main><div class="language-bar"><label for="language-select" id="language-label">Språk</label><select id="language-select" aria-label="Välj språk"><option value="sv">🇸🇪 Svenska</option><option value="en">🇬🇧 English</option></select></div><p class="eyebrow">DIN TRADINGDESK</p><h1>KLAR <span>INVEST</span></h1><p class="sub">En tydlig plan. Ett klick till nästa möjlighet.</p><section class="panel" id="book-panel"><p class="eyebrow">📖 365 DAYS OF TRADING WISDOM · KARL NORBERG</p><p id="book-date"></p><p class="quote" id="book-quote"></p><p id="book-lesson"></p><p class="gold" id="book-question"></p><div class="book-controls"><button type="button" id="prev-day">←</button><label>Dag <input id="book-day" type="number" min="1" max="365"></label><button type="button" id="next-day">→</button></div><p class="muted">365 dagar med tradinglärdomar och inspiration</p></section>
 <section class="panel" id="pattern-panel">
 <h2>Tradingstrategier – välj signaltyp</h2>
@@ -130,13 +131,36 @@ html,body{background:#000!important}main{background:transparent!important}
 
 </div><div class="strategy-description" id="strategy-explanation" aria-live="polite"><h3 id="strategy-search-title">EXAKT DETTA SÖKER SCANNERN</h3><ol id="strategy-rules"></ol><div class="rsi-note" id="strategy-trade-rules"></div><p class="muted" id="strategy-caveat"></p></div>
 </section><section class="panel" id="settings-panel"><button id="settings-toggle" type="button">⚙️ Marknader och filter</button><h2>1. Välj marknader</h2><label class="check"><input type="checkbox" id="stockholm" checked> Nasdaq Stockholm</label><label class="check"><input type="checkbox" id="firstnorth" checked> First North Sweden</label><label class="check"><input type="checkbox" id="ngm"> NGM – Nordic SME / Main Regulated</label><label class="check"><input type="checkbox" id="spotlight"> Spotlight (datakälla ännu ej verifierad)</label>
-<h2 style="margin-top:22px">2. Aktiekurs (SEK)</h2><div class="prices"><label>Från<input id="min" type="number" min="0" step="0.01" value="10"></label><label>Till<input id="max" type="number" min="0" step="0.01" value="1000"></label></div><p class="muted">Scannar Piercing Line, Piercing Bullish och Tom Camp LONG 1D. Endast avslutade dagsljus används.</p><button id="start">SÖK AKTIER →</button></section>
+<h2 style="margin-top:22px">2. Aktiekurs (SEK)</h2><div class="prices"><label>Från<input id="min" type="number" min="0" step="0.01" value="10"></label><label>Till<input id="max" type="number" min="0" step="0.01" value="1000"></label></div><p class="muted">Scannar Piercing Line, Piercing Bullish och Tom Camp LONG 1D. Endast avslutade dagsljus används.</p><button id="start">NY SCANNING →</button><div class="scan-controls is-hidden" id="scan-controls"><button type="button" id="pause-scan">⏸ PAUS</button><button type="button" id="stop-scan">⏹ STOPP</button></div></section>
 <div id="extras"><button id="risk-toggle" type="button">⚖️ Välj risk</button><button id="book-toggle" type="button">📖 Dagens visdom</button></div><section class="panel" id="risk-panel"><h2>⚖️ Max risk per affär</h2><div class="risk-fields"><label>Max risk (kr)<input class="risk-input" id="risk-max" type="number" value="150" min="1"></label></div><p class="gold" id="risk-output">Välj endast max risk. Entry och SL hämtas automatiskt från varje träffs röda ljus.</p></section><section class="panel" id="result"><h2>Dina möjligheter</h2><p id="scan-method-summary" class="scan-method-summary">Metod: –</p><p id="state">Förbereder...</p><progress id="bar" max="100" value="0"></progress><div class="stats"><div class="stat" id="pct">0 %</div><div class="stat" id="checked">0 kontrollerade</div><div class="stat" id="hits">0 träffar</div></div><p class="detail" id="patternSteps"></p><p class="muted" id="source"></p><p class="detail" id="coverage"></p><p class="warning" id="warning"></p><div class="scroll"><table><thead><tr><th>Aktie</th><th>Marknad</th><th>Status</th><th>Senaste datum</th><th>Stängning</th><th>Handelsplan</th><th>Genvägar</th></tr></thead><tbody id="rows"></tbody></table></div></section>
 </main><script src="/wisdom365.js"></script><script>
 const $=id=>document.getElementById(id);
 const text=(id,value)=>$(id).textContent=value;
 const button=$('start');
-let selectedPattern='three_candles', scanResults=[];
+let selectedPattern='three_candles', scanResults=[], currentJob=null, scanPaused=false, scanStopped=false;
+const SCAN_STORAGE='klar-invest-last-scan-v2', ACTIVE_STORAGE='klar-invest-active-scan-v2';
+function saveSnapshot(data){
+ try{localStorage.setItem(SCAN_STORAGE,JSON.stringify({savedAt:new Date().toISOString(),data:data,results:scanResults}))}catch(e){}
+}
+function saveActive(){try{currentJob?localStorage.setItem(ACTIVE_STORAGE,currentJob):localStorage.removeItem(ACTIVE_STORAGE)}catch(e){}}
+function setControls(active){
+ $('scan-controls').classList.toggle('is-hidden',!active);
+ $('pause-scan').disabled=!active;
+ $('stop-scan').disabled=!active;
+ button.disabled=active;
+}
+function applyScanData(data){
+ const percent=data.total?Math.min(100,Math.round((data.processed||0)/data.total*100)):0;
+ $('bar').value=percent;text('pct',percent+' %');
+ text('checked',data.total?(data.checked||0)+' av '+data.total+' kontrollerade':'Inväntar aktielista');
+ text('state',data.state==='done'?'Scanning klar':data.state==='stopped'?'Scanning stoppad':data.state==='paused'?'Scanning pausad':data.state==='error'?'Scanning misslyckades':!data.total?(data.stage||'Hämtar instrumentlista…'):'Scannar '+(data.processed||0)+' av '+data.total);
+ text('source',data.source_note||(data.stage||'Hämtar aktier…'));
+ const m=data.market_counts||{};text('coverage','Stockholm '+(m.OMXSTO??'–')+' · First North '+(m.FIRST_NORTH??'–')+' · NGM '+(m.NGM??'–')+' · Senaste handelsdag '+(data.required_date||'–'));
+ text('warning',[...(data.warnings||[]),...(data.message?[data.message]:[])].join(' '));
+ if(Array.isArray(data.results)) scanResults=data.results;
+ for(const p of ['three_candles','piercing_bullish','tom_camp_long_1d']){const el=document.querySelector('[data-count="'+p+'"]');if(el)el.textContent=scanResults.filter(x=>x.pattern===p).length+' träffar'}
+ renderMatches();
+}
 const patternDescriptions={
  three_candles:{
   steps:[
@@ -249,37 +273,49 @@ async function pollJob(job){
   }
  }
 }
+async function monitorJob(job){
+ currentJob=job;saveActive();scanStopped=false;setControls(true);$('result').style.display='block';
+ for(;;){
+  await wait(1200);
+  let res;
+  try{res=await fetch('/api/unified-scan/'+encodeURIComponent(job),{cache:'no-store'});if(!res.ok)throw Error('Kunde inte hämta scanningen')}
+  catch(e){text('state','Tillfälligt anslutningsfel – försöker igen');continue}
+  const data=await res.json();applyScanData(data);saveSnapshot(data);
+  scanPaused=data.state==='paused';text('pause-scan',scanPaused?'▶ FORTSÄTT':'⏸ PAUS');
+  if(['done','error','missing','stopped'].includes(data.state)){
+   currentJob=null;saveActive();setControls(false);button.textContent='NY SCANNING →';return;
+  }
+ }
+}
 async function run(){
  const min=Number($('min').value),max=Number($('max').value);
  const options={nasdaq_stockholm:$('stockholm').checked,first_north:$('firstnorth').checked,ngm:$('ngm').checked,spotlight:$('spotlight').checked,min_price:min,max_price:max};
  if(!options.nasdaq_stockholm&&!options.first_north&&!options.ngm){alert('Välj minst en verifierad marknad');return}
  if(!Number.isFinite(min)||!Number.isFinite(max)||min<0||max<min){alert('Kontrollera prisintervallet');return}
- button.disabled=true;scanResults=[];renderMatches();
- $('result').style.display='block';text('scan-method-summary','Gemensam scanning: Piercing Line · Piercing Bullish · Tom Camp LONG 1D');
- text('state','Startar scanning...');text('warning','');
+ scanResults=[];renderMatches();$('result').style.display='block';text('scan-method-summary','Gemensam scanning: Piercing Line · Piercing Bullish · Tom Camp LONG 1D');text('state','Startar scanning...');text('warning','');setControls(true);
  try{
   const response=await fetch('/api/unified-scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(options)});
   if(!response.ok)throw Error('Serverfel '+response.status);
   const started=await response.json();if(started.error)throw Error(started.error);
-  for(;;){
-   await wait(1800);
-   const res=await fetch('/api/unified-scan/'+encodeURIComponent(started.job),{cache:'no-store'});
-   if(!res.ok)throw Error('Kunde inte hämta scanningen');
-   const data=await res.json();
-   const percent=data.total?Math.min(100,Math.round(data.processed/data.total*100)):0;
-   $('bar').value=percent;text('pct',percent+' %');text('checked',data.total?(data.checked||0)+' av '+data.total+' kontrollerade':'Inväntar aktielista');
-   text('state',data.state==='done'?'Scanning klar':data.state==='error'?'Scanning misslyckades':!data.total?(data.stage||'Hämtar instrumentlista…'):'Scannar '+(data.processed||0)+' av '+data.total);
-   text('source',data.source_note||(data.stage||'Hämtar aktier…'));
-   const c=data.market_counts||{};text('coverage','Stockholm '+(c.OMXSTO??'–')+' · First North '+(c.FIRST_NORTH??'–')+' · NGM '+(c.NGM??'–')+' · Senaste handelsdag '+(data.required_date||'–'));
-   if(data.state==='done'||data.state==='error'||data.state==='missing'){
-    text('warning',[...(data.warnings||[]),...(data.message?[data.message]:[])].join(' '));
-    scanResults=data.results||[];
-    for(const p of ['three_candles','piercing_bullish','tom_camp_long_1d'])document.querySelector('[data-count="'+p+'"]').textContent=scanResults.filter(x=>x.pattern===p).length+' träffar';
-    renderMatches();break;
-   }
-  }
- }catch(e){text('state','Fel vid scanning');text('warning',e.message)}
- finally{button.disabled=false}
+  await monitorJob(started.job);
+ }catch(e){text('state','Fel vid scanning');text('warning',e.message);currentJob=null;saveActive();setControls(false)}
 }
-button.addEventListener('click',run);applyLanguage();
+$('pause-scan').addEventListener('click',async()=>{
+ if(!currentJob)return;
+ const action=scanPaused?'resume':'pause';
+ try{const r=await fetch('/api/unified-scan/'+encodeURIComponent(currentJob)+'/'+action,{method:'POST'});const d=await r.json();scanPaused=d.state==='paused';text('pause-scan',scanPaused?'▶ FORTSÄTT':'⏸ PAUS');text('state',scanPaused?'Scanning pausad':'Scanning fortsätter')}catch(e){text('warning','Kunde inte ändra pausläge')}
+});
+$('stop-scan').addEventListener('click',async()=>{
+ if(!currentJob)return;
+ try{await fetch('/api/unified-scan/'+encodeURIComponent(currentJob)+'/stop',{method:'POST'});scanStopped=true;text('state','Scanning stoppad');currentJob=null;saveActive();setControls(false);button.textContent='NY SCANNING →'}catch(e){text('warning','Kunde inte stoppa scanningen')}
+});
+function restoreLastScan(){
+ try{
+  const raw=localStorage.getItem(SCAN_STORAGE);
+  if(raw){const saved=JSON.parse(raw);scanResults=saved.results||saved.data?.results||[];$('result').style.display='block';text('scan-method-summary','Senaste sparade scanning · '+new Date(saved.savedAt).toLocaleString('sv-SE'));applyScanData(saved.data||{});}
+  const active=localStorage.getItem(ACTIVE_STORAGE);
+  if(active){currentJob=active;monitorJob(active);}
+ }catch(e){}
+}
+button.addEventListener('click',run);restoreLastScan();applyLanguage();
 </script></body></html>
