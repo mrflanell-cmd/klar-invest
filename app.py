@@ -934,6 +934,12 @@ def run_unified_scan(job_id, options):
                 return item,None,str(exc)[:100]
         with ThreadPoolExecutor(max_workers=5) as pool:
             for future in as_completed([pool.submit(check,item) for item in selected]):
+                while job.get("state") == "paused":
+                    time.sleep(0.25)
+                if job.get("state") == "stopped":
+                    for pending in pool._threads if False else []:
+                        pass
+                    break
                 item,bars,error=future.result()
                 job["processed"] += 1
                 if error:
@@ -966,8 +972,9 @@ def run_unified_scan(job_id, options):
                         "close":round(last["close"],4)
                     })
         job["results"].sort(key=lambda x:(x["pattern"],x["ticker"]))
-        job["state"]="done"
-        job["stage"]="Scanning färdig"
+        if job.get("state") != "stopped":
+            job["state"]="done"
+            job["stage"]="Scanning färdig"
     except Exception as exc:
         job["state"]="error"
         job["stage"]="Scanning misslyckades"
@@ -989,3 +996,33 @@ def start_unified_scan(o: BasicScanOptions):
 @app.get("/api/unified-scan/{job_id}")
 def unified_scan_progress(job_id: str):
     return BASIC_JOBS.get(job_id,{"state":"missing","message":"Sökningen finns inte"})
+
+@app.post("/api/unified-scan/{job_id}/pause")
+def unified_scan_pause(job_id: str):
+    job = BASIC_JOBS.get(job_id)
+    if job is None:
+        return {"state":"missing"}
+    if job.get("state") == "running":
+        job["state"] = "paused"
+        job["stage"] = "Scanning pausad"
+    return {"state":job.get("state")}
+
+@app.post("/api/unified-scan/{job_id}/resume")
+def unified_scan_resume(job_id: str):
+    job = BASIC_JOBS.get(job_id)
+    if job is None:
+        return {"state":"missing"}
+    if job.get("state") == "paused":
+        job["state"] = "running"
+        job["stage"] = "Scanning fortsätter"
+    return {"state":job.get("state")}
+
+@app.post("/api/unified-scan/{job_id}/stop")
+def unified_scan_stop(job_id: str):
+    job = BASIC_JOBS.get(job_id)
+    if job is None:
+        return {"state":"missing"}
+    if job.get("state") in ("running","paused"):
+        job["state"] = "stopped"
+        job["stage"] = "Scanning stoppad"
+    return {"state":job.get("state")}
