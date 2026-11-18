@@ -907,14 +907,18 @@ def unified_patterns(bars):
         klar_green["low"] < klar_red["low"]
         and klar_green["close"] > klar_red["low"]
     )
-    klar_reclaim = (
+    klar_reclaim_inside_red = (
         klar_green["open"] <= klar_red["close"]
         and klar_green["close"] > klar_red["close"]
+        and klar_green["close"] <= klar_red["open"]
     )
+    # If candle 2 closes above the red candle's open/body, a sweep is mandatory.
+    klar_closes_above_red = klar_green["close"] > klar_red["open"]
+    candle2_qualifies = klar_sweep if klar_closes_above_red else (klar_sweep or klar_reclaim_inside_red)
     if (
         klar_red["close"] < klar_red["open"]
         and klar_green["close"] > klar_green["open"]
-        and (klar_sweep or klar_reclaim)
+        and candle2_qualifies
         and klar_confirm["close"] > klar_red["open"]
     ):
         out.append(("klar_klick", klar_red, klar_confirm))
