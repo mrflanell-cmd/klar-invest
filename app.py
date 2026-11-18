@@ -896,6 +896,28 @@ def unified_patterns(bars):
     prior, reversal = bars[-2:]
     if (reversal["low"] < prior["low"] and reversal["close"] > prior["high"]):
         out.append(("tom_camp_long_1d", prior, reversal))
+    # KLAR KLICK — 18 Nov 2026 ("Klicket").
+    # Candle 1 defines the entire trade: entry=red open, SL=red close, TP=2R.
+    # Candle 2 asks "may I take it?": it must be green and qualify by either
+    # a bullish liquidity sweep below candle 1 low, OR a reclaim from at/below
+    # candle 1 close back above that close (it may finish inside or above candle 1).
+    # Candle 3 answers yes/no: its close must be strictly above candle 1 open.
+    klar_red, klar_green, klar_confirm = bars[-3:]
+    klar_sweep = (
+        klar_green["low"] < klar_red["low"]
+        and klar_green["close"] > klar_red["low"]
+    )
+    klar_reclaim = (
+        klar_green["open"] <= klar_red["close"]
+        and klar_green["close"] > klar_red["close"]
+    )
+    if (
+        klar_red["close"] < klar_red["open"]
+        and klar_green["close"] > klar_green["open"]
+        and (klar_sweep or klar_reclaim)
+        and klar_confirm["close"] > klar_red["open"]
+    ):
+        out.append(("klar_klick", klar_red, klar_confirm))
     return out
 
 def run_unified_scan(job_id, options):
@@ -964,7 +986,7 @@ def run_unified_scan(job_id, options):
                         "ticker":item["ticker"],"name":item["name"],
                         "symbol":item["symbol"],"exchange":item.get("exchange"),
                         "date":last["date"],"pattern":method,
-                        "confirmed":method in ("three_candles","tom_camp_long_1d"),"status":"BEKRÄFTAD" if method in ("three_candles","tom_camp_long_1d") else "SETUP – EJ BEKRÄFTAD",
+                        "confirmed":method in ("three_candles","tom_camp_long_1d","klar_klick"),"status":"BEKRÄFTAD" if method in ("three_candles","tom_camp_long_1d","klar_klick") else "SETUP – EJ BEKRÄFTAD",
                         "entry":round(entry,4),"stop":round(stop,4),
                         "target_2r":round(entry+2*(entry-stop),4),
                         "close":round(last["close"],4)
