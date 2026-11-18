@@ -917,6 +917,7 @@ def unified_patterns(bars):
     candle2_qualifies = klar_sweep if klar_closes_above_red else (klar_sweep or klar_reclaim_inside_red)
     if (
         klar_red["close"] < klar_red["open"]
+        and klar_red["low"] < klar_red["close"]
         and klar_green["close"] > klar_green["open"]
         and candle2_qualifies
         and klar_confirm["close"] > klar_red["open"]
