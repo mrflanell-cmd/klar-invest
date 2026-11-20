@@ -925,6 +925,52 @@ def unified_patterns(bars):
         out.append(("klar_klick", klar_red, klar_confirm))
     return out
 
+
+def red_green_pair(red, green):
+    """Strict red-to-green reclaim, shared by weekly and daily checks."""
+    return (red["close"] < red["open"]
+            and green["close"] > green["open"]
+            and green["open"] < red["close"]
+            and green["close"] > red["close"])
+
+def weekly_daily_reclaim(bars):
+    """Last completed weekly red/green pair, then a daily pair in the following week.
+
+    Weeks are ISO Monday-Sunday. Aggregate only fully completed prior weeks;
+    the week containing the latest completed daily bar is the trigger week.
+    """
+    if len(bars) < 12:
+        return None
+    weeks = {}
+    for bar in bars:
+        day = dt.date.fromisoformat(bar["date"])
+        monday = day - dt.timedelta(days=day.weekday())
+        group = weeks.setdefault(monday, [])
+        group.append(bar)
+    current_week = dt.date.fromisoformat(bars[-1]["date"])
+    current_week -= dt.timedelta(days=current_week.weekday())
+    prior_weeks = sorted(k for k in weeks if k < current_week)
+    if len(prior_weeks) < 2:
+        return None
+    w1, w2 = prior_weeks[-2:]
+    if (w2 - w1).days != 7 or (current_week - w2).days != 7:
+        return None
+    def aggregate(group):
+        return {"open":group[0]["open"], "close":group[-1]["close"],
+                "high":max(x["high"] for x in group),
+                "low":min(x["low"] for x in group)}
+    red_week, green_week = aggregate(weeks[w1]), aggregate(weeks[w2])
+    if not red_green_pair(red_week, green_week):
+        return None
+    current_days = weeks[current_week]
+    if len(current_days) < 2:
+        return None
+    red_day, green_day = current_days[-2:]
+    if not red_green_pair(red_day, green_day):
+        return None
+    return {"weekly_red_start":str(w1), "weekly_green_start":str(w2),
+            "daily_red_date":red_day["date"], "daily_green_date":green_day["date"]}
+
 def run_unified_scan(job_id, options):
     job = BASIC_JOBS[job_id]
     try:
@@ -977,6 +1023,16 @@ def run_unified_scan(job_id, options):
                 if not options.min_price <= last["close"] <= options.max_price:
                     continue
                 job["in_range"] += 1
+                weekly_match = weekly_daily_reclaim(bars)
+                if weekly_match:
+                    job["results"].append({
+                        "ticker":item["ticker"],"name":item["name"],
+                        "symbol":item["symbol"],"exchange":item.get("exchange"),
+                        "date":last["date"],"pattern":"weekly_daily_reclaim",
+                        "confirmed":True,"status":"1W + 1D MATCH – TESTSIGNAL",
+                        "entry":None,"stop":None,"target_2r":None,
+                        "close":round(last["close"],4), **weekly_match
+                    })
                 for method,red,signal in unified_patterns(bars):
                     # The manipulation setup uses its own candle's close as the
                     # confirmation level and sweep low as the protective stop.
