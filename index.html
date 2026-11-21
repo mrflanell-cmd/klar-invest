@@ -129,6 +129,7 @@ html,body{background:#000!important}main{background:transparent!important}
 <button type="button" class="strategy-choice" data-pattern="weekly_daily_reclaim" aria-pressed="false"><img class="strategy-choice-image" src="/assets/three-candle-method.svg" alt="Veckosignal följd av dagsformation nästa vecka"><strong>1W → 1D</strong><small data-count="weekly_daily_reclaim">0 träffar</small></button>
 <button type="button" class="strategy-choice" data-pattern="three_candles" aria-pressed="false"><img class="strategy-choice-image" src="/assets/three-candle-method.svg" alt="Piercing Line med tre riktiga ljus och bekräftelse" loading="eager"><strong>Piercing Line</strong><small data-count="three_candles">0 träffar</small></button>
 <button type="button" class="strategy-choice" data-pattern="piercing_bullish" aria-pressed="false"><img class="strategy-choice-image" src="/assets/three-candle-method.svg" alt="Bullish Piercing med rött och grönt ljus" loading="eager"><strong>Piercing Bullish</strong><small data-count="piercing_bullish">0 träffar</small></button>
+<button type="button" class="strategy-choice" data-pattern="breakout_20" aria-pressed="false"><span class="strategy-choice-art" aria-hidden="true" style="font-size:50px;color:#297b54">↗</span><strong>Breakout 20D</strong><small data-count="breakout_20">0 träffar</small></button>
 <button type="button" class="strategy-choice" data-pattern="tom_camp_long_1d" aria-pressed="false"><img class="strategy-choice-image" src="/assets/tom-camp-long-1d.svg" alt="Bullish manipulation: nytt ljus sveper föregående low och stänger över dess high" loading="eager"><strong>Tom Camp LONG 1D</strong><small data-count="tom_camp_long_1d">0 träffar</small></button>
 
 </div><div class="strategy-description" id="strategy-explanation" aria-live="polite"><h3 id="strategy-search-title">EXAKT DETTA SÖKER SCANNERN</h3><ol id="strategy-rules"></ol><div class="rsi-note" id="strategy-trade-rules"></div><p class="muted" id="strategy-caveat"></p></div>
@@ -160,10 +161,21 @@ function applyScanData(data){
  const m=data.market_counts||{};text('coverage','Stockholm '+(m.OMXSTO??'–')+' · First North '+(m.FIRST_NORTH??'–')+' · NGM '+(m.NGM??'–')+' · Senaste handelsdag '+(data.required_date||'–'));
  text('warning',[...(data.warnings||[]),...(data.message?[data.message]:[])].join(' '));
  if(Array.isArray(data.results)) scanResults=data.results;
- for(const p of ['klar_klick','weekly_daily_reclaim','three_candles','piercing_bullish','tom_camp_long_1d']){const el=document.querySelector('[data-count="'+p+'"]');if(el)el.textContent=scanResults.filter(x=>x.pattern===p).length+' träffar'}
+ for(const p of ['klar_klick','weekly_daily_reclaim','three_candles','piercing_bullish','tom_camp_long_1d','breakout_20']){const el=document.querySelector('[data-count="'+p+'"]');if(el)el.textContent=scanResults.filter(x=>x.pattern===p).length+' träffar'}
  renderMatches();
 }
 const patternDescriptions={
+ breakout_20:{
+  steps:[
+   'De 20 handelsdagarna före signalen: hitta högsta High. Dagens signalljus får inte ingå i beräkningen.',
+   'Signaldagen: ett avslutat grönt dagsljus (Close > Open) stänger strikt över de föregående 20 dagarnas högsta High.',
+   'Utbrottsljusets Low måste ligga strikt under utbrottsnivån, annars kan en giltig stop-loss under köppriset inte beräknas.',
+   'Efter stängning: lägg köp-limit vid tidigare 20-dagarshögsta, endast om kursen återtestar nivån. En träff är inte en garanterad orderfyllning.'
+  ],
+  trade:'FÖRSLAG / TESTSTRATEGI: Entry = tidigare 20 dagars högsta High. SL = utbrottsljusets Low. TP = Entry + 2 × (Entry − SL). Risk normalt 150 kr. Ingen order läggs automatiskt.',
+  note:'Separat strategi, påverkar inte Piercing Line. Scannern visar bara bekräftade utbrott från senaste avslutade handelsdag. Kontrollera likviditet, spread och ordervillkor före köp.'
+ },
+
  weekly_daily_reclaim:{
   steps:[
    '1W vecka 1: rött avslutat veckoljus (Close < Open).',
@@ -314,7 +326,7 @@ async function run(){
  const options={nasdaq_stockholm:$('stockholm').checked,first_north:$('firstnorth').checked,ngm:$('ngm').checked,spotlight:$('spotlight').checked,min_price:min,max_price:max};
  if(!options.nasdaq_stockholm&&!options.first_north&&!options.ngm){alert('Välj minst en verifierad marknad');return}
  if(!Number.isFinite(min)||!Number.isFinite(max)||min<0||max<min){alert('Kontrollera prisintervallet');return}
- scanResults=[];renderMatches();$('result').style.display='block';text('scan-method-summary','Svensk scanning: KLAR KLICK · 1W → 1D · Piercing Line · Piercing Bullish · Tom Camp LONG 1D');text('state','Startar scanning...');text('warning','');setControls(true);
+ scanResults=[];renderMatches();$('result').style.display='block';text('scan-method-summary','Svensk scanning: KLAR KLICK · 1W → 1D · Piercing Line · Piercing Bullish · Tom Camp LONG 1D · Breakout 20D');text('state','Startar scanning...');text('warning','');setControls(true);
  try{
   const response=await fetch('/api/unified-scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(options)});
   if(!response.ok)throw Error('Serverfel '+response.status);
