@@ -884,6 +884,16 @@ def unified_patterns(bars):
         and green["open"] <= red["close"] and red["close"] < green["close"] < red["open"]
         and confirm["close"] > red["open"]):
         out.append(("three_candles", red, confirm))
+    # KLAR INVEST breakout v1: previous 20 completed sessions' highest high.
+    # Confirmed only after latest session closes. Buy limit at old resistance,
+    # stop at breakout candle low, TP at 2R. Never use current high in lookback.
+    if len(bars) >= 21:
+        breakout = bars[-1]
+        resistance = max(bar["high"] for bar in bars[-21:-1])
+        if (breakout["close"] > resistance
+                and breakout["close"] > breakout["open"]
+                and breakout["low"] < resistance):
+            out.append(("breakout_20", {"open": resistance, "close": breakout["low"]}, breakout))
     # Classic bullish piercing: green candle opens at/below the red close,
     # closes above the red body's midpoint, but below the red open.
     first, piercing = bars[-2:]
@@ -1037,7 +1047,9 @@ def run_unified_scan(job_id, options):
                     # The manipulation setup uses its own candle's close as the
                     # confirmation level and sweep low as the protective stop.
                     # Existing Piercing trade plans remain untouched.
-                    if method == "tom_camp_long_1d":
+                    if method == "breakout_20":
+                        entry,stop=red["open"],red["close"]
+                    elif method == "tom_camp_long_1d":
                         entry,stop=signal["close"],signal["low"]
                     else:
                         entry,stop=red["open"],red["close"]
@@ -1047,7 +1059,7 @@ def run_unified_scan(job_id, options):
                         "ticker":item["ticker"],"name":item["name"],
                         "symbol":item["symbol"],"exchange":item.get("exchange"),
                         "date":last["date"],"pattern":method,
-                        "confirmed":method in ("three_candles","tom_camp_long_1d","klar_klick"),"status":"BEKRÄFTAD" if method in ("three_candles","tom_camp_long_1d","klar_klick") else "SETUP – EJ BEKRÄFTAD",
+                        "confirmed":method in ("three_candles","tom_camp_long_1d","klar_klick","breakout_20"),"status":"BEKRÄFTAD" if method in ("three_candles","tom_camp_long_1d","klar_klick") else "SETUP – EJ BEKRÄFTAD",
                         "entry":round(entry,4),"stop":round(stop,4),
                         "target_2r":round(entry+2*(entry-stop),4),
                         "close":round(last["close"],4)
