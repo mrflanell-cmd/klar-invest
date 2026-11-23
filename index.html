@@ -190,8 +190,8 @@ const patternDescriptions={
  klar_klick:{
   steps:[
    'Ljus 1 – PLANEN: rött dagsljus med obligatorisk nedre wick (Low måste ligga under Close). Dess öppning är köppriset och dess stängning är stop loss.',
-   'Ljus 2 – FÅR JAG?: grönt dagsljus vars kropp måste stänga inne i Ljus 1:s röda kropp eller över hela den röda kroppen. Det får inte stänga under Ljus 1:s Close. Om Ljus 2 stänger över Ljus 1:s Open måste det dessutom ha sweepat under Ljus 1:s Low.',
-   'Ljus 3 – JA/NEJ: dagens avslutade ljus måste stänga över Ljus 1:s röda öppning. Färgen på bekräftelseljus spelar ingen roll.'
+   'Ljus 2 – FÅR JAG?: grönt dagsljus (Close2 > Open2). Måste öppna strikt under Ljus 1:s stängning (Open2 < Close1), stänga strikt över Ljus 1:s stängning (Close2 > Close1), men aldrig över Ljus 1:s öppning (Close2 ≤ Open1). Inga undantag.',
+   'Ljus 3 – JA/NEJ: avslutat ljus måste stänga strikt över både Ljus 1:s öppning och Ljus 2:s stängning. Färgen på bekräftelseljus spelar ingen roll.'
   ],
   trade:'Entry: Ljus 1 Open (limit vid återtest). SL: Ljus 1 Close. TP: exakt 2R. Röda kroppen bestämmer köppris, risk och reward.',
   note:'18 november 2026 – Klicket. Ljus 1 gör planen. Ljus 2 avgör om setupen får gå vidare. Ljus 3 bekräftar ja eller nej.'
