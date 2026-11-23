@@ -197,6 +197,10 @@ def universe(market):
             pass
     if not items:
         raise ValueError("Kunde inte hämta någon aktielista. Försök igen senare.")
+    # Include the known Stockholm listing even if the metadata feed omits it.
+    if not any(x.get("symbol") == "LOOMIS.ST" for x in items):
+        items.append({"ticker":"LOOMIS","symbol":"LOOMIS.ST",
+                      "name":"Loomis AB","exchange":"OMXSTO"})
     # Augment with Nasdaq's live First North listings when the feed identifies Sweden.
     first_north, fn_errors = first_north_sweden_universe()
     existing = {item["symbol"] for item in items}
@@ -676,7 +680,7 @@ class BasicScanOptions(BaseModel):
     max_price: float = 1000
     ngm: bool = True
     spotlight: bool = True
-    method: str = "three_candles"  # Original method remains the default.
+    method: str = "two_candles"
 
 BASIC_JOBS = {}
 
@@ -955,6 +959,7 @@ def run_unified_scan(job_id, options):
         selected = list({x["symbol"]:x for x in items if x.get("exchange") in allowed}.values())
         job["total"] = len(selected)
         job["source_note"] = note
+        job["diagnostics"] = {"LOOMIS": "Väntar på kurskontroll"}
         job["market_counts"] = {k:sum(x.get("exchange")==k for x in selected)
                                 for k in ("OMXSTO","FIRST_NORTH","NGM")}
         if options.spotlight:
@@ -984,6 +989,12 @@ def run_unified_scan(job_id, options):
                     break
                 item,bars,error=future.result()
                 job["processed"] += 1
+                if item["ticker"] == "LOOMIS":
+                    job["diagnostics"]["LOOMIS"] = ("Kursfel: " + error) if error else (
+                        "Senaste datum: " + bars[-1]["date"] + "; O/C: " +
+                        str(round(bars[-2]["open"],2)) + "/" + str(round(bars[-2]["close"],2)) +
+                        " → " + str(round(bars[-1]["open"],2)) + "/" + str(round(bars[-1]["close"],2)) +
+                        "; tvåljusmatch: " + str(any(p[0]=="two_candles" for p in unified_patterns(bars))))
                 if error:
                     job["errors"] += 1
                     if len(job["error_examples"]) < 15:
@@ -1026,7 +1037,7 @@ def start_unified_scan(o: BasicScanOptions):
         return {"error":"Ogiltigt prisintervall"}
     job_id=str(uuid.uuid4())
     BASIC_JOBS[job_id]={"state":"running","total":0,"processed":0,"checked":0,
-        "errors":0,"results":[],"error_examples":[],"source_note":"",
+        "errors":0,"results":[],"error_examples":[],"diagnostics":{},"source_note":"",
         "message":"","stage":"Startar instrumenthämtning","warnings":[],"market_counts":{},"required_date":None,"in_range":0}
     threading.Thread(target=run_unified_scan,args=(job_id,o),daemon=True).start()
     return {"job":job_id}
