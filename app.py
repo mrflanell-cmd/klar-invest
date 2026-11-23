@@ -875,50 +875,25 @@ def basic_scan_progress(job_id: str):
 
 
 def unified_patterns(bars):
-    """Return independent signals based on completed daily candles."""
+    """Only the two approved daily signals, using completed OHLC bars."""
     out = []
-    if len(bars) < 3:
-        return out
-    red, green, confirm = bars[-3:]
-    if (red["close"] < red["open"] and green["close"] > green["open"]
-        and green["open"] <= red["close"] and red["close"] < green["close"] < red["open"]
-        and confirm["close"] > red["open"]):
-        out.append(("three_candles", red, confirm))
-    # KLAR INVEST breakout v1: previous 20 completed sessions' highest high.
-    # Confirmed only after latest session closes. Buy limit at old resistance,
-    # stop at breakout candle low, TP at 2R. Never use current high in lookback.
-    if len(bars) >= 21:
-        breakout = bars[-1]
-        resistance = max(bar["high"] for bar in bars[-21:-1])
-        if (breakout["close"] > resistance
-                and breakout["close"] > breakout["open"]
-                and breakout["low"] < resistance):
-            out.append(("breakout_20", {"open": resistance, "close": breakout["low"]}, breakout))
-    # Classic bullish piercing: green candle opens at/below the red close,
-    # closes above the red body's midpoint, but below the red open.
-    first, piercing = bars[-2:]
-    midpoint = (first["open"] + first["close"]) / 2
-    if (first["close"] < first["open"] and piercing["close"] > piercing["open"]
-        and piercing["open"] <= first["close"]
-        and midpoint < piercing["close"] < first["open"]):
-        out.append(("piercing_bullish", first, piercing))
-    # Daily bullish manipulation: second candle sweeps prior low, then closes above prior high.
-    prior, reversal = bars[-2:]
-    if (reversal["low"] < prior["low"] and reversal["close"] > prior["high"]):
-        out.append(("tom_camp_long_1d", prior, reversal))
-    # KLAR KLICK: strict three-candle formation, all comparisons unrounded.
-    # Candle 2 must open strictly below red close and close within red body.
-    klar_red, klar_green, klar_confirm = bars[-3:]
-    if (
-        klar_red["close"] < klar_red["open"]
-        and klar_red["low"] < klar_red["close"]
-        and klar_green["close"] > klar_green["open"]
-        and klar_green["open"] < klar_red["close"]
-        and klar_red["close"] < klar_green["close"] <= klar_red["open"]
-        and klar_confirm["close"] > klar_red["open"]
-        and klar_confirm["close"] > klar_green["close"]
-    ):
-        out.append(("klar_klick", klar_red, klar_confirm))
+    def valid_pair(red, green):
+        return (
+            red["open"] > red["close"]
+            and green["close"] > green["open"]
+            and green["open"] < red["close"]
+            and red["close"] < green["close"] <= red["open"]
+        )
+    if len(bars) >= 2:
+        red, green = bars[-2:]
+        if valid_pair(red, green):
+            out.append(("two_candles", red, green))
+    if len(bars) >= 3:
+        red, green, confirmation = bars[-3:]
+        if (valid_pair(red, green)
+                and confirmation["close"] > confirmation["open"]
+                and confirmation["close"] > red["open"]):
+            out.append(("klar_klick", red, confirmation))
     return out
 
 
@@ -983,7 +958,7 @@ def run_unified_scan(job_id, options):
         job["market_counts"] = {k:sum(x.get("exchange")==k for x in selected)
                                 for k in ("OMXSTO","FIRST_NORTH","NGM")}
         if options.spotlight:
-            job["warnings"].append("Spotlight saknar verifierad datakälla.")
+            job["warnings"].append("Spotlight saknar verifierad datakälla och kan inte skannas.")
         if options.first_north and not job["market_counts"]["FIRST_NORTH"]:
             job["warnings"].append("First North kunde inte verifieras; ofullständig täckning.")
         if not selected:
@@ -1019,33 +994,17 @@ def run_unified_scan(job_id, options):
                 if not options.min_price <= last["close"] <= options.max_price:
                     continue
                 job["in_range"] += 1
-                weekly_match = weekly_daily_reclaim(bars)
-                if weekly_match:
-                    job["results"].append({
-                        "ticker":item["ticker"],"name":item["name"],
-                        "symbol":item["symbol"],"exchange":item.get("exchange"),
-                        "date":last["date"],"pattern":"weekly_daily_reclaim",
-                        "confirmed":True,"status":"1W + 1D MATCH – TESTSIGNAL",
-                        "entry":None,"stop":None,"target_2r":None,
-                        "close":round(last["close"],4), **weekly_match
-                    })
-                for method,red,signal in unified_patterns(bars):
-                    # The manipulation setup uses its own candle's close as the
-                    # confirmation level and sweep low as the protective stop.
-                    # Existing Piercing trade plans remain untouched.
-                    if method == "breakout_20":
-                        entry,stop=red["open"],red["close"]
-                    elif method == "tom_camp_long_1d":
-                        entry,stop=signal["close"],signal["low"]
-                    else:
-                        entry,stop=red["open"],red["close"]
+                for method, red, signal in unified_patterns(bars):
+                    entry, stop = red["open"], red["close"]
                     if entry <= stop:
                         continue
+                    confirmed = method == "klar_klick"
                     job["results"].append({
                         "ticker":item["ticker"],"name":item["name"],
                         "symbol":item["symbol"],"exchange":item.get("exchange"),
                         "date":last["date"],"pattern":method,
-                        "confirmed":method in ("three_candles","tom_camp_long_1d","klar_klick","breakout_20"),"status":"BEKRÄFTAD" if method in ("three_candles","tom_camp_long_1d","klar_klick") else "SETUP – EJ BEKRÄFTAD",
+                        "confirmed":confirmed,
+                        "status":"BEKRÄFTAD" if confirmed else "TVÅ LJUS – INVÄNTAR BEKRÄFTELSE",
                         "entry":round(entry,4),"stop":round(stop,4),
                         "target_2r":round(entry+2*(entry-stop),4),
                         "close":round(last["close"],4)
