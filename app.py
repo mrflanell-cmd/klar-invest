@@ -906,31 +906,17 @@ def unified_patterns(bars):
     prior, reversal = bars[-2:]
     if (reversal["low"] < prior["low"] and reversal["close"] > prior["high"]):
         out.append(("tom_camp_long_1d", prior, reversal))
-    # KLAR KLICK — 18 Nov 2026 ("Klicket").
-    # Candle 1 defines the entire trade: entry=red open, SL=red close, TP=2R.
-    # Candle 2 asks "may I take it?": it must be green and qualify by either
-    # a bullish liquidity sweep below candle 1 low, OR a reclaim from at/below
-    # candle 1 close back above that close (it may finish inside or above candle 1).
-    # Candle 3 answers yes/no: its close must be strictly above candle 1 open.
+    # KLAR KLICK: strict three-candle formation, all comparisons unrounded.
+    # Candle 2 must open strictly below red close and close within red body.
     klar_red, klar_green, klar_confirm = bars[-3:]
-    klar_sweep = (
-        klar_green["low"] < klar_red["low"]
-        and klar_green["close"] > klar_red["low"]
-    )
-    # Candle 2 body must close inside candle 1's red body or above it.
-    klar_closes_in_or_above_red_body = klar_green["close"] > klar_red["close"]
-    # If candle 2 closes above the red candle's open/body, a sweep is mandatory.
-    klar_closes_above_red = klar_green["close"] > klar_red["open"]
-    candle2_qualifies = (
-        klar_closes_in_or_above_red_body
-        and (klar_sweep if klar_closes_above_red else True)
-    )
     if (
         klar_red["close"] < klar_red["open"]
         and klar_red["low"] < klar_red["close"]
         and klar_green["close"] > klar_green["open"]
-        and candle2_qualifies
+        and klar_green["open"] < klar_red["close"]
+        and klar_red["close"] < klar_green["close"] <= klar_red["open"]
         and klar_confirm["close"] > klar_red["open"]
+        and klar_confirm["close"] > klar_green["close"]
     ):
         out.append(("klar_klick", klar_red, klar_confirm))
     return out
