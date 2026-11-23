@@ -123,25 +123,20 @@ html,body{background:#000!important}main{background:transparent!important}
 </style></head><body><main><div class="language-bar"><label for="language-select" id="language-label">Språk</label><select id="language-select" aria-label="Välj språk"><option value="sv">🇸🇪 Svenska</option><option value="en">🇬🇧 English</option></select></div><p class="eyebrow">DIN TRADINGDESK</p><h1>KLAR <span>INVEST</span></h1><p class="sub">En tydlig plan. Ett klick till nästa möjlighet.</p><section class="panel" id="book-panel"><p class="eyebrow">📖 365 DAYS OF TRADING WISDOM · KARL NORBERG</p><p id="book-date"></p><p class="quote" id="book-quote"></p><p id="book-lesson"></p><p class="gold" id="book-question"></p><div class="book-controls"><button type="button" id="prev-day">←</button><label>Dag <input id="book-day" type="number" min="1" max="365"></label><button type="button" id="next-day">→</button></div><p class="muted">365 dagar med tradinglärdomar och inspiration</p></section>
 <section class="panel" id="pattern-panel">
 <h2>Tradingstrategier – välj signaltyp</h2>
-<p class="muted">En scanning söker KLAR KLICK och våra övriga signaltyper i svenska aktier. Välj formation för att se signaler och regler.</p>
-<div class="strategy-choice-grid" id="strategy-grid" style="grid-template-columns:repeat(auto-fit,minmax(145px,1fr))">
-<button type="button" class="strategy-choice is-selected" data-pattern="klar_klick" aria-pressed="true"><img class="strategy-choice-image" src="/assets/three-candle-method.svg" alt="KLAR KLICK: rött planljus, grönt setup-ljus och bekräftelse" loading="eager"><strong>KLAR KLICK</strong><small data-count="klar_klick">0 träffar</small></button>
-<button type="button" class="strategy-choice" data-pattern="weekly_daily_reclaim" aria-pressed="false"><img class="strategy-choice-image" src="/assets/three-candle-method.svg" alt="Veckosignal följd av dagsformation nästa vecka"><strong>1W → 1D</strong><small data-count="weekly_daily_reclaim">0 träffar</small></button>
-<button type="button" class="strategy-choice" data-pattern="three_candles" aria-pressed="false"><img class="strategy-choice-image" src="/assets/three-candle-method.svg" alt="Piercing Line med tre riktiga ljus och bekräftelse" loading="eager"><strong>Piercing Line</strong><small data-count="three_candles">0 träffar</small></button>
-<button type="button" class="strategy-choice" data-pattern="piercing_bullish" aria-pressed="false"><img class="strategy-choice-image" src="/assets/three-candle-method.svg" alt="Bullish Piercing med rött och grönt ljus" loading="eager"><strong>Piercing Bullish</strong><small data-count="piercing_bullish">0 träffar</small></button>
-<button type="button" class="strategy-choice" data-pattern="breakout_20" aria-pressed="false"><span class="strategy-choice-art" aria-hidden="true" style="font-size:50px;color:#297b54">↗</span><strong>Breakout 20D</strong><small data-count="breakout_20">0 träffar</small></button>
-<button type="button" class="strategy-choice" data-pattern="tom_camp_long_1d" aria-pressed="false"><img class="strategy-choice-image" src="/assets/tom-camp-long-1d.svg" alt="Bullish manipulation: nytt ljus sveper föregående low och stänger över dess high" loading="eager"><strong>Tom Camp LONG 1D</strong><small data-count="tom_camp_long_1d">0 träffar</small></button>
-
+<p class="muted">Endast två sökningar: två ljus i väntan på bekräftelse och tre ljus med grön bekräftelse. Alla tillgängliga svenska marknader.</p>
+<div class="strategy-choice-grid" id="strategy-grid">
+<button type="button" class="strategy-choice is-selected" data-pattern="two_candles" aria-pressed="true"><svg viewBox="0 0 230 130" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Rött och grönt setup-ljus" style="width:100%;height:105px;background:#f7faf6;border-radius:10px"><line x1="8" y1="32" x2="224" y2="32" stroke="#c18b38" stroke-width="1.5" stroke-dasharray="5 4"/><line x1="8" y1="88" x2="224" y2="88" stroke="#c18b38" stroke-width="1.5" stroke-dasharray="5 4"/><text x="8" y="24" font-size="10" fill="#65552f">RÖD OPEN</text><text x="8" y="101" font-size="10" fill="#65552f">RÖD CLOSE</text><line x1="72" y1="19" x2="72" y2="112" stroke="#c44848" stroke-width="3"/><rect x="59" y="32" width="26" height="56" rx="2" fill="#d95a50"/><line x1="130" y1="67" x2="130" y2="119" stroke="#26946b" stroke-width="3"/><rect x="117" y="73" width="26" height="30" rx="2" fill="#31a878"/><text x="67" y="125" font-size="10" fill="#33483a">1</text><text x="126" y="125" font-size="10" fill="#33483a">2</text></svg><strong>1. TVÅ LJUS – MÖJLIGHET</strong><small data-count="two_candles">0 träffar</small></button>
+<button type="button" class="strategy-choice" data-pattern="klar_klick" aria-pressed="false"><svg viewBox="0 0 230 130" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Rött, grönt och grönt bekräftelseljus" style="width:100%;height:105px;background:#f7faf6;border-radius:10px"><line x1="8" y1="32" x2="224" y2="32" stroke="#c18b38" stroke-width="1.5" stroke-dasharray="5 4"/><line x1="8" y1="88" x2="224" y2="88" stroke="#c18b38" stroke-width="1.5" stroke-dasharray="5 4"/><text x="8" y="24" font-size="10" fill="#65552f">RÖD OPEN</text><text x="8" y="101" font-size="10" fill="#65552f">RÖD CLOSE</text><line x1="72" y1="19" x2="72" y2="112" stroke="#c44848" stroke-width="3"/><rect x="59" y="32" width="26" height="56" rx="2" fill="#d95a50"/><line x1="130" y1="67" x2="130" y2="119" stroke="#26946b" stroke-width="3"/><rect x="117" y="73" width="26" height="30" rx="2" fill="#31a878"/><line x1="190" y1="6" x2="190" y2="91" stroke="#26946b" stroke-width="3"/><rect x="177" y="12" width="26" height="61" rx="2" fill="#31a878"/><text x="67" y="125" font-size="10" fill="#33483a">1</text><text x="126" y="125" font-size="10" fill="#33483a">2</text><text x="186" y="125" font-size="10" fill="#33483a">3</text></svg><strong>2. TRE LJUS – BEKRÄFTAD</strong><small data-count="klar_klick">0 träffar</small></button>
 </div><div class="strategy-description" id="strategy-explanation" aria-live="polite"><h3 id="strategy-search-title">EXAKT DETTA SÖKER SCANNERN</h3><ol id="strategy-rules"></ol><div class="rsi-note" id="strategy-trade-rules"></div><p class="muted" id="strategy-caveat"></p></div>
-</section><section class="panel" id="settings-panel"><button id="settings-toggle" type="button">⚙️ Marknader och filter</button><h2>1. Välj marknader</h2><label class="check"><input type="checkbox" id="stockholm" checked> Nasdaq Stockholm</label><label class="check"><input type="checkbox" id="firstnorth" checked> First North Sweden</label><label class="check"><input type="checkbox" id="ngm"> NGM – Nordic SME / Main Regulated</label><label class="check"><input type="checkbox" id="spotlight"> Spotlight (datakälla ännu ej verifierad)</label>
-<h2 style="margin-top:22px">2. Aktiekurs (SEK)</h2><div class="prices"><label>Från<input id="min" type="number" min="0" step="0.01" value="10"></label><label>Till<input id="max" type="number" min="0" step="0.01" value="100000"></label></div><p class="muted">Standard: alla tillgängliga svenska aktier på Nasdaq Stockholm och First North från 10 kr. Endast avslutade dagsljus används.</p><button id="start">NY SCANNING →</button><div class="scan-controls is-hidden" id="scan-controls"><button type="button" id="pause-scan">⏸ PAUS</button><button type="button" id="stop-scan">⏹ STOPP</button></div></section>
+</section><section class="panel" id="settings-panel"><button id="settings-toggle" type="button">⚙️ Marknader och filter</button><h2>1. Välj marknader</h2><label class="check"><input type="checkbox" id="stockholm" checked> Nasdaq Stockholm</label><label class="check"><input type="checkbox" id="firstnorth" checked> First North Sweden</label><label class="check"><input type="checkbox" id="ngm" checked> NGM – Nordic SME / Main Regulated</label><label class="check"><input type="checkbox" id="spotlight" checked> Spotlight (datakälla ännu ej verifierad)</label>
+<h2 style="margin-top:22px">2. Aktiekurs (SEK)</h2><div class="prices"><label>Från<input id="min" type="number" min="0" step="0.01" value="10"></label><label>Till<input id="max" type="number" min="0" step="0.01" value="100000"></label></div><p class="muted">Standard: Nasdaq Stockholm, First North, NGM och Spotlight valda. Spotlight kan inte skannas utan verifierad källa; First North-täckning kan vara ofullständig. Endast avslutade dagsljus.</p><button id="start">NY SCANNING →</button><div class="scan-controls is-hidden" id="scan-controls"><button type="button" id="pause-scan">⏸ PAUS</button><button type="button" id="stop-scan">⏹ STOPP</button></div></section>
 <div id="extras"><button id="risk-toggle" type="button">⚖️ Välj risk</button><button id="book-toggle" type="button">📖 Dagens visdom</button></div><section class="panel" id="risk-panel"><h2>⚖️ Max risk per affär</h2><div class="risk-fields"><label>Max risk (kr)<input class="risk-input" id="risk-max" type="number" value="150" min="1"></label></div><p class="gold" id="risk-output">Välj endast max risk. Entry och SL hämtas automatiskt från varje träffs röda ljus.</p></section><section class="panel" id="result"><h2>Dina möjligheter</h2><p id="scan-method-summary" class="scan-method-summary">Metod: –</p><p id="state">Förbereder...</p><progress id="bar" max="100" value="0"></progress><div class="stats"><div class="stat" id="pct">0 %</div><div class="stat" id="checked">0 kontrollerade</div><div class="stat" id="hits">0 träffar</div></div><p class="detail" id="patternSteps"></p><p class="muted" id="source"></p><p class="detail" id="coverage"></p><p class="warning" id="warning"></p><div class="scroll"><table><thead><tr><th>Aktie</th><th>Marknad</th><th>Status</th><th>Senaste datum</th><th>Stängning</th><th>Handelsplan</th><th>Genvägar</th></tr></thead><tbody id="rows"></tbody></table></div></section>
 </main><script src="/wisdom365.js"></script><script>
 const $=id=>document.getElementById(id);
 const text=(id,value)=>$(id).textContent=value;
 const button=$('start');
-let selectedPattern='klar_klick', scanResults=[], currentJob=null, scanPaused=false, scanStopped=false;
-const SCAN_STORAGE='klar-invest-last-scan-v2', ACTIVE_STORAGE='klar-invest-active-scan-v2';
+let selectedPattern='two_candles', scanResults=[], currentJob=null, scanPaused=false, scanStopped=false;
+const SCAN_STORAGE='klar-invest-last-scan-v3', ACTIVE_STORAGE='klar-invest-active-scan-v3';
 function saveSnapshot(data){
  try{localStorage.setItem(SCAN_STORAGE,JSON.stringify({savedAt:new Date().toISOString(),data:data,results:scanResults}))}catch(e){}
 }
@@ -155,69 +150,33 @@ function setControls(active){
 function applyScanData(data){
  const percent=data.total?Math.min(100,Math.round((data.processed||0)/data.total*100)):0;
  $('bar').value=percent;text('pct',percent+' %');
- text('checked',data.total?(data.checked||0)+' av '+data.total+' kontrollerade':'Inväntar aktielista');
+ text('checked',data.total?(data.processed||0)+' av '+data.total+' behandlade':'Inväntar aktielista');
  text('state',data.state==='done'?'Scanning klar':data.state==='stopped'?'Scanning stoppad':data.state==='paused'?'Scanning pausad':data.state==='error'?'Scanning misslyckades':!data.total?(data.stage||'Hämtar instrumentlista…'):'Scannar '+(data.processed||0)+' av '+data.total);
  text('source',data.source_note||(data.stage||'Hämtar aktier…'));
- const m=data.market_counts||{};text('coverage','Stockholm '+(m.OMXSTO??'–')+' · First North '+(m.FIRST_NORTH??'–')+' · NGM '+(m.NGM??'–')+' · Senaste handelsdag '+(data.required_date||'–'));
+ const m=data.market_counts||{};text('coverage','Stockholm '+(m.OMXSTO??'–')+' · First North '+(m.FIRST_NORTH??'–')+' · NGM '+(m.NGM??'–')+' · Spotlight: ej verifierad'+' · Senaste handelsdag '+(data.required_date||'–'));
  text('warning',[...(data.warnings||[]),...(data.message?[data.message]:[])].join(' '));
  if(Array.isArray(data.results)) scanResults=data.results;
- for(const p of ['klar_klick','weekly_daily_reclaim','three_candles','piercing_bullish','tom_camp_long_1d','breakout_20']){const el=document.querySelector('[data-count="'+p+'"]');if(el)el.textContent=scanResults.filter(x=>x.pattern===p).length+' träffar'}
+ for(const p of ['two_candles','klar_klick']){const el=document.querySelector('[data-count="'+p+'"]');if(el)el.textContent=scanResults.filter(x=>x.pattern===p).length+' träffar'}
  renderMatches();
 }
 const patternDescriptions={
- breakout_20:{
+ two_candles:{
   steps:[
-   'De 20 handelsdagarna före signalen: hitta högsta High. Dagens signalljus får inte ingå i beräkningen.',
-   'Signaldagen: ett avslutat grönt dagsljus (Close > Open) stänger strikt över de föregående 20 dagarnas högsta High.',
-   'Utbrottsljusets Low måste ligga strikt under utbrottsnivån, annars kan en giltig stop-loss under köppriset inte beräknas.',
-   'Efter stängning: lägg köp-limit vid tidigare 20-dagarshögsta, endast om kursen återtestar nivån. En träff är inte en garanterad orderfyllning.'
+   'Ljus 1: rött dagsljus (Open1 > Close1).',
+   'Ljus 2: grönt dagsljus (Close2 > Open2). Öppnar strikt UNDER röda stängningen (Open2 < Close1).',
+   'Ljus 2 stänger strikt ÖVER röda stängningen men aldrig över röda öppningen (Close1 < Close2 ≤ Open1).'
   ],
-  trade:'FÖRSLAG / TESTSTRATEGI: Entry = tidigare 20 dagars högsta High. SL = utbrottsljusets Low. TP = Entry + 2 × (Entry − SL). Risk normalt 150 kr. Ingen order läggs automatiskt.',
-  note:'Separat strategi, påverkar inte Piercing Line. Scannern visar bara bekräftade utbrott från senaste avslutade handelsdag. Kontrollera likviditet, spread och ordervillkor före köp.'
+  trade:'MÖJLIGHET – ingen köporder ännu. Invänta ett grönt bekräftelseljus som stänger över röda ljusets öppning. Preliminär plan: köp Open1, SL Close1, TP 2R, risk 150 kr.',
+  note:'Endast de två senaste avslutade dagsljusen används. Signalen är INTE bekräftad.'
  },
-
- weekly_daily_reclaim:{
-  steps:[
-   '1W vecka 1: rött avslutat veckoljus (Close < Open).',
-   '1W vecka 2: grönt avslutat veckoljus (Close > Open), öppnar strikt under röda veckans Close och stänger strikt över den.',
-   'FÖLJANDE vecka: två på varandra följande avslutade dagsljus, först rött och sedan grönt. Det gröna öppnar strikt under röda dagsljusets Close och stänger strikt över det.',
-   'Sökningen använder endast avslutade dagsljus och avslutade tidigare veckor. Ingen signal från en pågående veckostapel.'
-  ],
-  trade:'TESTSIGNAL – ingen automatisk köporder eller riskberäkning ännu. Entry och stop loss behöver fastställas innan handelsplan visas.',
-  note:'Separat 1W → 1D-filter. Övriga strategier påverkas inte. Veckorna ska vara direkt efter varandra.'
- },
-
  klar_klick:{
   steps:[
-   'Ljus 1 – PLANEN: rött dagsljus med obligatorisk nedre wick (Low måste ligga under Close). Dess öppning är köppriset och dess stängning är stop loss.',
-   'Ljus 2 – FÅR JAG?: grönt dagsljus (Close2 > Open2). Måste öppna strikt under Ljus 1:s stängning (Open2 < Close1), stänga strikt över Ljus 1:s stängning (Close2 > Close1), men aldrig över Ljus 1:s öppning (Close2 ≤ Open1). Inga undantag.',
-   'Ljus 3 – JA/NEJ: avslutat ljus måste stänga strikt över både Ljus 1:s öppning och Ljus 2:s stängning. Färgen på bekräftelseljus spelar ingen roll.'
+   'Ljus 1: rött dagsljus (Open1 > Close1).',
+   'Ljus 2: grönt; Open2 < Close1 och Close1 < Close2 ≤ Open1. Det får aldrig stänga över röda öppningen.',
+   'Ljus 3: GRÖNT (Close3 > Open3) och stänger strikt ÖVER röda ljusets öppning (Close3 > Open1).'
   ],
-  trade:'Entry: Ljus 1 Open (limit vid återtest). SL: Ljus 1 Close. TP: exakt 2R. Röda kroppen bestämmer köppris, risk och reward.',
-  note:'18 november 2026 – Klicket. Ljus 1 gör planen. Ljus 2 avgör om setupen får gå vidare. Ljus 3 bekräftar ja eller nej.'
- },
- three_candles:{
-  steps:[
-   'Dag 1 – rött ljus: stängning är lägre än öppning.',
-   'Dag 2 – grönt ljus: öppnar på eller under dag 1:s stängning, stänger över dag 1:s stängning men under dag 1:s öppning.',
-   'Dag 3 – bekräftelse: dagsstängningen ligger över dag 1:s öppning. Bekräftelseljuset får vara grönt eller rött.'
-  ],
-  trade:'Entry: dag 1:s öppning (limit vid återtest). SL: dag 1:s stängning. TP: 2R. Köpantal beräknas från vald maxrisk, normalt 150 kr.',
-  note:'Endast bekräftade treljusformationer visas. Ingen nedre veke eller 50-procentsregel krävs.'
- },
- piercing_bullish:{
-  steps:[
-   'Dag 1 – rött ljus: stänger under öppningen.',
-   'Dag 2 – grönt ljus: öppnar på eller under det röda ljusets stängning.',
-   'Dag 2 stänger över mitten av den röda kroppen, men under dess öppning.'
-  ],
-  trade:'Klassisk tvåljusformation. Entry vid röda ljusets öppning på återtest, SL vid dess stängning, TP 2R. Risk kan justeras.',
-  note:'Visas som SETUP utan separat bekräftelseljus. Detta är klassisk bullish piercing med 50 %-regel, inte en verifierad kopia av TradingViews interna screener.'
- },
- tom_camp_long_1d:{
-  steps:['Dag 1 – ett avslutat dagsljus, oavsett färg.','Dag 2 – lägsta kursen går strikt under dag 1:s lägsta.','Dag 2 – dagsstängningen ligger strikt över dag 1:s högsta. Signalen bekräftas vid stängning.'],
-  trade:'Testmodell: entry vid signalljusets stängning (nästa handelsdag endast om priset kan nås), SL vid signalljusets low, TP 2R. Köpantal utifrån vald risk, normalt 150 kr.',
-  note:'Daglig anpassning inspirerad av manipulation candle. Entry, SL och TP är vår testmodell, inte verifierade originalregler från Tom Camp. Gap och slippage kan förändra verklig risk.'
+  trade:'BEKRÄFTAD FORMATION: köp-limit vid Open1 efter stängning. SL = Close1. TP = 2R. Max risk 150 kr. Ingen order skickas automatiskt.',
+  note:'Tre avslutade dagsljus i följd. Inga röda bekräftelseljus godkänns.'
  }
 };
 function updateStrategyExplanation(){
@@ -245,7 +204,7 @@ function renderMatches(){
   const tr=document.createElement('tr');
   const fields=[item.name+' ('+item.ticker+')',item.exchange==='FIRST_NORTH'?'First North':item.exchange==='NGM'?'NGM':'Stockholm',item.status,item.date,item.close+' kr'];
   fields.forEach(v=>{const td=document.createElement('td');td.textContent=String(v);tr.append(td)});
-  const plan=document.createElement('td');plan.className='trade-plan';const p=tradePlan(item);plan.textContent=item.pattern==='weekly_daily_reclaim'?'1W + 1D uppfyllt · invänta fastställd köpplan':p?formatPlan(p):'Ingen giltig handelsplan';
+  const plan=document.createElement('td');plan.className='trade-plan';const p=tradePlan(item);plan.textContent=item.pattern==='two_candles'?'VÄNTA PÅ GRÖN BEKRÄFTELSE · preliminär plan: '+(p?formatPlan(p):'saknas'):p?formatPlan(p):'Ingen giltig handelsplan';
   tr.dataset.ticker=item.ticker;tr._scanItem=item;tr.append(plan);
   const td=document.createElement('td');
   const tv=document.createElement('a');tv.href='https://www.tradingview.com/chart/?symbol='+encodeURIComponent('OMXSTO:'+item.ticker.replaceAll(' ','_'));tv.target='_blank';tv.rel='noopener noreferrer';tv.textContent='TradingView';td.append(tv);
@@ -326,7 +285,7 @@ async function run(){
  const options={nasdaq_stockholm:$('stockholm').checked,first_north:$('firstnorth').checked,ngm:$('ngm').checked,spotlight:$('spotlight').checked,min_price:min,max_price:max};
  if(!options.nasdaq_stockholm&&!options.first_north&&!options.ngm){alert('Välj minst en verifierad marknad');return}
  if(!Number.isFinite(min)||!Number.isFinite(max)||min<0||max<min){alert('Kontrollera prisintervallet');return}
- scanResults=[];renderMatches();$('result').style.display='block';text('scan-method-summary','Svensk scanning: KLAR KLICK · 1W → 1D · Piercing Line · Piercing Bullish · Tom Camp LONG 1D · Breakout 20D');text('state','Startar scanning...');text('warning','');setControls(true);
+ scanResults=[];renderMatches();$('result').style.display='block';text('scan-method-summary','Svensk scanning: TVÅ LJUS (möjlighet) · TRE LJUS (grön bekräftelse)');text('state','Startar scanning...');text('warning','');setControls(true);
  try{
   const response=await fetch('/api/unified-scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(options)});
   if(!response.ok)throw Error('Serverfel '+response.status);
