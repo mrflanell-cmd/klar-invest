@@ -154,7 +154,7 @@ function applyScanData(data){
  text('state',data.state==='done'?'Scanning klar':data.state==='stopped'?'Scanning stoppad':data.state==='paused'?'Scanning pausad':data.state==='error'?'Scanning misslyckades':!data.total?(data.stage||'Hämtar instrumentlista…'):'Scannar '+(data.processed||0)+' av '+data.total);
  text('source',data.source_note||(data.stage||'Hämtar aktier…'));
  const m=data.market_counts||{};text('coverage','Stockholm '+(m.OMXSTO??'–')+' · First North '+(m.FIRST_NORTH??'–')+' · NGM '+(m.NGM??'–')+' · Spotlight: ej verifierad'+' · Senaste handelsdag '+(data.required_date||'–'));
- text('warning',[...(data.warnings||[]),...(data.message?[data.message]:[])].join(' '));
+ text('warning',[...(data.warnings||[]),...(data.message?[data.message]:[]),...(data.diagnostics?.LOOMIS?['Loomis-kontroll: '+data.diagnostics.LOOMIS]:[])].join(' '));
  if(Array.isArray(data.results)) scanResults=data.results;
  for(const p of ['two_candles','klar_klick']){const el=document.querySelector('[data-count="'+p+'"]');if(el)el.textContent=scanResults.filter(x=>x.pattern===p).length+' träffar'}
  renderMatches();
