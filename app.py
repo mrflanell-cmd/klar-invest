@@ -1073,3 +1073,26 @@ def unified_scan_stop(job_id: str):
         job["state"] = "stopped"
         job["stage"] = "Scanning stoppad"
     return {"state":job.get("state")}
+
+@app.get("/chart", response_class=HTMLResponse)
+def chart_page():
+    return Path(__file__).with_name("chart.html").read_text(encoding="utf-8")
+
+@app.get("/api/chart")
+def chart_data(symbol: str, interval: str = "1d"):
+    from fastapi import HTTPException
+    if not re.fullmatch(r"[A-Za-z0-9.^=\-]{1,32}", symbol) or interval not in ("1d","1wk","1mo"):
+        raise HTTPException(400, "Ogiltig symbol eller tidsram")
+    try:
+        r = requests.get("https://query1.finance.yahoo.com/v8/finance/chart/"+requests.utils.quote(symbol.upper(),safe=""), params={"range":"1y" if interval=="1d" else "5y","interval":interval},headers={"User-Agent":"Mozilla/5.0"},timeout=15)
+        r.raise_for_status()
+        d=r.json()["chart"]["result"][0]
+        q=d["indicators"]["quote"][0]
+        bars=[]
+        for i,t in enumerate(d["timestamp"]):
+            o,h,l,c=[q[k][i] for k in ("open","high","low","close")]
+            if any(v is None for v in (o,h,l,c)):continue
+            bars.append({"time":t,"open":o,"high":h,"low":l,"close":c,"volume":q.get("volume",[None]*len(d["timestamp"]))[i]})
+        return {"bars":bars,"currency":d["meta"].get("currency"),"symbol":symbol.upper()}
+    except Exception:
+        raise HTTPException(502,"Kursdata kunde inte hämtas. Kontrollera symbolen eller försök senare.")
