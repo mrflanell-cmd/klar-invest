@@ -1081,10 +1081,10 @@ def chart_page():
 @app.get("/api/chart")
 def chart_data(symbol: str, interval: str = "1d"):
     from fastapi import HTTPException
-    if not re.fullmatch(r"[A-Za-z0-9.^=\-]{1,32}", symbol) or interval not in ("1d","1wk","1mo"):
+    if not re.fullmatch(r"[A-Za-z0-9.^=\-]{1,32}", symbol) or interval not in ("5m","10m","15m","30m","60m","1d","1wk","1mo"):
         raise HTTPException(400, "Ogiltig symbol eller tidsram")
     try:
-        r = requests.get("https://query1.finance.yahoo.com/v8/finance/chart/"+requests.utils.quote(symbol.upper(),safe=""), params={"range":"1y" if interval=="1d" else "5y","interval":interval},headers={"User-Agent":"Mozilla/5.0"},timeout=15)
+        r = requests.get("https://query1.finance.yahoo.com/v8/finance/chart/"+requests.utils.quote(symbol.upper(),safe=""), params={"range":"5d" if interval in ("5m","10m","15m","30m") else "1mo" if interval=="60m" else "1y" if interval=="1d" else "5y","interval":"5m" if interval=="10m" else interval},headers={"User-Agent":"Mozilla/5.0"},timeout=15)
         r.raise_for_status()
         d=r.json()["chart"]["result"][0]
         q=d["indicators"]["quote"][0]
@@ -1093,6 +1093,14 @@ def chart_data(symbol: str, interval: str = "1d"):
             o,h,l,c=[q[k][i] for k in ("open","high","low","close")]
             if any(v is None for v in (o,h,l,c)):continue
             bars.append({"time":t,"open":o,"high":h,"low":l,"close":c,"volume":q.get("volume",[None]*len(d["timestamp"]))[i]})
+        if interval=="10m":
+            grouped={}
+            for b in bars:
+                k=b["time"]//600*600
+                if k not in grouped: grouped[k]={**b,"time":k}
+                else:
+                    a=grouped[k]; a["high"]=max(a["high"],b["high"]); a["low"]=min(a["low"],b["low"]); a["close"]=b["close"]; a["volume"]=(a["volume"] or 0)+(b["volume"] or 0)
+            bars=list(grouped.values())
         return {"bars":bars,"currency":d["meta"].get("currency"),"symbol":symbol.upper()}
     except Exception:
         raise HTTPException(502,"Kursdata kunde inte hämtas. Kontrollera symbolen eller försök senare.")
