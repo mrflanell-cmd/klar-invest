@@ -968,16 +968,14 @@ def run_unified_scan(job_id, options):
             job["warnings"].append("First North kunde inte verifieras; ofullständig täckning.")
         if not selected:
             raise ValueError("Inga instrument i de valda marknaderna.")
-        now = dt.datetime.now(TZ)
-        required = now.date() if now.time() >= dt.time(18,15) else now.date()-dt.timedelta(days=1)
-        while required.weekday() >= 5:
-            required -= dt.timedelta(days=1)
-        job["required_date"] = str(required)
+        # Match by completed bar position, never by a required calendar date.
+        job["required_date"] = None
+        job["warnings"].append("Senaste tillgängliga stängda dagsljus används; kontrollera signaldatum om kursdata är fördröjd.")
         def check(item):
             try:
                 bars = history(item, "SE")
-                if not bars or dt.date.fromisoformat(bars[-1]["date"]) < required:
-                    return item,None,"Inaktuell kurs"
+                if not bars:
+                    return item,None,"Inga stängda dagsljus"
                 return item,bars,None
             except Exception as exc:
                 return item,None,str(exc)[:100]
