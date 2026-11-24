@@ -1096,3 +1096,17 @@ def chart_data(symbol: str, interval: str = "1d"):
         return {"bars":bars,"currency":d["meta"].get("currency"),"symbol":symbol.upper()}
     except Exception:
         raise HTTPException(502,"Kursdata kunde inte hämtas. Kontrollera symbolen eller försök senare.")
+
+@app.get("/api/chart-search")
+def chart_search(q: str = ""):
+    from fastapi import HTTPException
+    q=q.strip()[:80]
+    if len(q)<2: return {"results":[]}
+    try:
+        r=requests.get("https://query1.finance.yahoo.com/v1/finance/search",params={"q":q,"quotesCount":20,"newsCount":0,"lang":"sv-SE","region":"SE"},headers={"User-Agent":"Mozilla/5.0"},timeout=8)
+        r.raise_for_status()
+        rows=[{"symbol":x["symbol"],"name":x.get("longname") or x.get("shortname") or x["symbol"],"exchange":x.get("exchDisp","")} for x in r.json().get("quotes",[]) if x.get("quoteType")=="EQUITY" and x.get("symbol")]
+        rows.sort(key=lambda x:not x["symbol"].endswith(".ST"))
+        return {"results":rows[:12]}
+    except Exception:
+        raise HTTPException(502,"Aktiesökning tillfälligt otillgänglig")
